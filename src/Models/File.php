@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class File extends Model
 {
-    use HasFactory;
+    //use HasFactory;
 
     protected $fillable = ['url', 'disk', 'processed_at'];
 
@@ -19,5 +19,10 @@ class File extends Model
     public function markAsProcessed()
     {
         return $this->update(['processed_at' => now()]);
+    }
+
+    public function content()
+    {
+        return $this->hasMany(ImportedContent::class);
     }
 }

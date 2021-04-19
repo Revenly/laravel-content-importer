@@ -1,9 +1,9 @@
 <?php
 namespace R64\ContentImport\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use R64\ContentImport\Importable;
 
-class ImportedContent extends Model
+class ImportedContent extends Importable
 {
     protected $guarded = [];
 

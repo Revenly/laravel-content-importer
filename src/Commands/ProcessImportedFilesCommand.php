@@ -38,6 +38,6 @@ class ProcessImportedFilesCommand extends Command
      */
     public function handle()
     {
-        File::unprocessed()->each(fn($file) => ProcessFile::dispatchSync($file));
+        File::unprocessed()->each(fn($file) => ProcessFile::dispatch($file));
     }
 }

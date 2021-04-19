@@ -8,8 +8,5 @@ return [
 
     "chunck_size" => env('IMPORT_CHUNCK_SIZE', 1000),
 
-    /**
-     * Should imported content be saved in batches or rows
-     */
-    "in_batches" => true,
+    "heading_row" => 1
 ];

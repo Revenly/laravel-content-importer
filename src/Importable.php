@@ -2,20 +2,20 @@
 namespace R64\ContentImport;
 
 use Illuminate\Database\Eloquent\Model;
-use R64\ContentImport\Models\ImportedContent;
+use R64\ContentImport\Models\File;
 
 abstract class Importable extends Model
 {
     protected $guarded = [];
 
-    public function scopeByFileId($query, $id)
+    public function scopeForFile($query, $id)
     {
         return $query->where('file_id', $id);
     }
 
-    public function scopeByDisk($query, $disk)
+    public function scopeOnDisk($query, $disk)
     {
-        return $query->where('disk', $disk);
+        return $query->whereHas('file', fn($q) => $q->where('disk', $disk));
     }
 
     public function scopeUnprocessed($query)
@@ -33,4 +33,8 @@ abstract class Importable extends Model
         $query->whereBetween('processed_at', [$start, $end]);
     }
 
+    public function file()
+    {
+        return $this->belongsTo(File::class);
+    }
 }

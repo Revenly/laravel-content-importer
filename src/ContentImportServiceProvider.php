@@ -30,6 +30,8 @@ class ContentImportServiceProvider extends ServiceProvider
                 __DIR__.'/../database/migrations/' => database_path('migrations'),
             ], 'migrations');
         }
+
+        $this->app->make('Illuminate\Database\Eloquent\Factory')->load(__DIR__ . '/../database/factories');
     }
 
     /**
