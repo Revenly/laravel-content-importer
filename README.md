@@ -36,7 +36,7 @@ php artisan files:process
 ## Available Configs
 
 - directory `parent directory where files to be imported are stored. defaults to imports`
-- chunck_size ``
+- chunck_size `defines how large contents of your file should be chucked into. defaults to 1000`
 - heading_row: ` a heading row for your files (a row in which each cells indicates the purpose of that column)`
 
 
