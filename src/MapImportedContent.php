@@ -25,6 +25,8 @@ class MapImportedContent
 
     protected $beforeUpdate = null;
 
+    protected $canUpdateCallback = null;
+
     public function __construct(array $content, ImportableModel $importableModel = null)
     {
         $this->content = collect($content);
@@ -53,6 +55,13 @@ class MapImportedContent
         return $this;
     }
 
+    public function canUpdate(Closure $canUpdateCallback = null)
+    {
+        $this->canUpdateCallback = $canUpdateCallback;
+
+        return $this;
+    }
+
     public function withBeforeUpdate(Closure $beforeUpdate = null)
     {
         $this->beforeUpdate = $beforeUpdate;
@@ -72,13 +81,19 @@ class MapImportedContent
         $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
             return $this->mapModelAttributes($rowToMap, $row, $model);
         })->map(function ($items, string $model) {
-            $model = $this->importableModel
-            ->withModel(new $model)
-            ->withBeforeUpdate($this->beforeUpdate)
-            ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
+            $model = $this->savingModel(new $model, $items);
 
            $this->setModel($model);
         });
+    }
+
+    protected function savingModel(Model $model, array $items): Model
+    {
+        return $this->importableModel
+        ->withModel(new $model)
+        ->canUpdate($this->canUpdateCallback)
+        ->withBeforeUpdate($this->beforeUpdate)
+        ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
     }
 
     protected function mapModelAttributes(array $rowToMap, array $row, string $model): array

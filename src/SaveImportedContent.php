@@ -19,6 +19,8 @@ class SaveImportedContent implements ImportableModel
 
     protected $beforeUpdate = null;
 
+    protected $canUpdateCallback = null;
+
     public function withModel(Model $model): self
     {
         $this->model = $model;
@@ -29,6 +31,13 @@ class SaveImportedContent implements ImportableModel
     public function withBeforeUpdate(Closure $beforeUpdate = null)
     {
         $this->beforeUpdate = $beforeUpdate;
+
+        return $this;
+    }
+
+    public function canUpdate(Closure $canUpdateCallback = null)
+    {
+        $this->canUpdateCallback = $canUpdateCallback;
 
         return $this;
     }
@@ -71,6 +80,10 @@ class SaveImportedContent implements ImportableModel
     {
         $existedModel = $this->getModelIfExists(...func_get_args());
 
+        if ($existedModel && !$this->shouldUpdateModel($existedModel)) {
+            return $existedModel;
+        }
+
         if ($existedModel) {
             $items = $this->handleItemsBeforeUpdate($existedModel, $items);
 
@@ -84,6 +97,17 @@ class SaveImportedContent implements ImportableModel
 
             $model->save();
         });
+    }
+
+    protected function shouldUpdateModel(Model $model): bool
+    {
+        $callback = $this->canUpdateCallback;
+
+        if (!$callback) {
+            return true;
+        }
+
+        return $callback($model);
     }
 
     protected function handleItemsBeforeUpdate(Model $existedModel, array $items): array
