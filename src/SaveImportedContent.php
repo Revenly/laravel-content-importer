@@ -1,4 +1,5 @@
 <?php
+
 namespace R64\ContentImport;
 
 use Closure;
@@ -41,11 +42,11 @@ class SaveImportedContent implements ImportableModel
 
         $this->models = $models;
 
-        $modelItems = collect($items)->filter(function($value, $key) {
+        $modelItems = collect($items)->filter(function ($value, $key) {
             return !$this->isRelationAttribute($key);
         })->toArray();
 
-        $relationships = collect($items)->filter(function($value, $key) {
+        $relationships = collect($items)->filter(function ($value, $key) {
             return $this->isRelationAttribute($key);
         });
 
@@ -134,5 +135,4 @@ class SaveImportedContent implements ImportableModel
     {
         return Str::startsWith($attribute, '@');
     }
-
 }

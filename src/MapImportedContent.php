@@ -1,4 +1,5 @@
 <?php
+
 namespace R64\ContentImport;
 
 use Closure;
@@ -73,11 +74,11 @@ class MapImportedContent
             return $this->mapModelAttributes($rowToMap, $row, $model);
         })->map(function ($items, string $model) {
             $model = $this->importableModel
-            ->withModel(new $model)
-            ->withBeforeUpdate($this->beforeUpdate)
-            ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
+                ->withModel(new $model)
+                ->withBeforeUpdate($this->beforeUpdate)
+                ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
 
-           $this->setModel($model);
+            $this->setModel($model);
         });
     }
 
@@ -109,7 +110,7 @@ class MapImportedContent
             return $value;
         }
 
-        $castings = $this->casts->filter(function($value, $key)  use($model) {
+        $castings = $this->casts->filter(function ($value, $key)  use ($model) {
             return $key === $model;
         });
 
