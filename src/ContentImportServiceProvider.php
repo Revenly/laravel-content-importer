@@ -14,7 +14,7 @@ class ContentImportServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+         //$this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
          $this->commands([
              ImportFilesCommand::class,
@@ -31,7 +31,7 @@ class ContentImportServiceProvider extends ServiceProvider
             ], 'migrations');
         }
 
-        $this->app->make('Illuminate\Database\Eloquent\Factory')->load(__DIR__ . '/../database/factories');
+        //$this->app->make('Illuminate\Database\Eloquent\Factory')->load(__DIR__ . '/../database/factories');
     }
 
     /**
