@@ -1,17 +1,22 @@
 {
-    "name": "64robots/content-import",
+    "name": "64robots/laravel-content-importer.git",
     "description": "Save contents imported from files",
     "keywords": [
         "64robots",
         "content-import"
     ],
-    "homepage": "https://github.com/64robots/content-import",
+    "homepage": "https://github.com/64robots/laravel-content-importer.git",
     "license": "MIT",
     "type": "library",
     "authors": [
         {
             "name": "Agyenim Boateng",
             "email": "agyenim@64robots.com",
+            "role": "Developer"
+        },
+        {
+            "name": "Mohamed Benhida",
+            "email": "mohamed@64robots.com",
             "role": "Developer"
         }
     ],
