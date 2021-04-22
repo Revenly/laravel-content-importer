@@ -1,12 +1,6 @@
-# Very short description of the package
+## Laravel Content Importer
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/64robots/content-import.svg?style=flat-square)](https://packagist.org/packages/64robots/content-import)
-[![Build Status](https://img.shields.io/travis/64robots/content-import/master.svg?style=flat-square)](https://travis-ci.org/64robots/content-import)
-[![Quality Score](https://img.shields.io/scrutinizer/g/64robots/content-import.svg?style=flat-square)](https://scrutinizer-ci.com/g/64robots/content-import)
-[![Total Downloads](https://img.shields.io/packagist/dt/64robots/content-import.svg?style=flat-square)](https://packagist.org/packages/64robots/content-import)
-
-This is where your description should go. Try and limit it to a paragraph or two, and maybe throw in a mention of what PSRs you support to avoid any confusion with users and contributors.
-
+Import and save contents of files form local or remote storage
 ## Installation
 
 You can install the package via composer:
@@ -17,9 +11,34 @@ composer require 64robots/content-import
 
 ## Usage
 
-``` php
-// Usage description here
+Publish Migrations and default configurations.
+
+```bash
+php artisan vendor:publish --provider="R64\ContentImport\ContentImportServiceProvider"
 ```
+
+This package exposes 2 commands 
+
+Import files from a disk
+``` bash
+php artisan files:import 
+```
+
+Read and save contents imported files 
+
+```bash
+php artisan files:process
+```
+
+## Supported File formats
+ - csv
+
+## Available Configs
+
+- directory `parent directory where files to be imported are stored. defaults to imports`
+- chunck_size `defines how large contents of your file should be chucked into. defaults to 1000`
+- heading_row: ` a heading row for your files (a row in which each cells indicates the purpose of that column)`
+
 
 ### Testing
 
@@ -47,7 +66,3 @@ If you discover any security related issues, please email agyenim@64robots.com i
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
-
-## Laravel Package Boilerplate
-
-This package was generated using the [Laravel Package Boilerplate](https://laravelpackageboilerplate.com).

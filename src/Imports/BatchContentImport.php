@@ -7,7 +7,6 @@ use Maatwebsite\Excel\Concerns\WithChunkReading;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Events\AfterImport;
-use R64\ContentImport\Importable;
 use R64\ContentImport\Models\File;
 use R64\ContentImport\Models\ImportedContent;
 
@@ -26,12 +25,12 @@ class BatchContentImport implements ToCollection, WithChunkReading, WithHeadingR
 
     public function chunkSize(): int
     {
-        return (int) config('content_import.import_chunck_size') ?? 1000;
+       return  (int) config('content_import.chunck_size') ?? 1000;
     }
 
     public function headingRow(): int
     {
-        return (int) config('content_import.heading_row') ?? 1;
+        return config('content_import.heading_row') ?? 1;
     }
 
     public function registerEvents(): array
@@ -48,7 +47,7 @@ class BatchContentImport implements ToCollection, WithChunkReading, WithHeadingR
 
     public function collection(Collection $collection)
     {
-        Importable::create([
+        ImportedContent::create([
             'file_id' => $this->file->id,
             'data' => $collection->toArray()
         ]);

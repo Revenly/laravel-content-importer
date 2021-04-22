@@ -14,7 +14,7 @@ class CreateImportedContentsTable extends Migration
     public function up()
     {
         Schema::create('imported_contents', function (Blueprint $table) {
-            $table->id();
+            $table->increments('id');
             $table->unsignedBigInteger('file_id');
             $table->json('data');
             $table->timestamp('processed_at')->nullable();
