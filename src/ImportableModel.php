@@ -1,5 +1,6 @@
 <?php
 namespace R64\ContentImport;
+
 use Illuminate\Database\Eloquent\Model;
 
 interface ImportableModel

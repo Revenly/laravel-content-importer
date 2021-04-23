@@ -28,6 +28,8 @@ class MapImportedContent
 
     protected $canUpdateCallback = null;
 
+    protected $mappedAttributes = [];
+
     public function __construct(array $content, ImportableModel $importableModel = null)
     {
         $this->content = collect($content);
@@ -77,15 +79,21 @@ class MapImportedContent
         });
     }
 
-    protected function mapModels(array $row): void
+    public function saveModels()
     {
-        $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
-            return $this->mapModelAttributes($rowToMap, $row, $model);
-        })->map(function ($items, string $model) {
+        $this->mappedAttributes->map(function ($items, string $model) {
             $model = $this->savingModel(new $model, $items);
 
             $this->setModel($model);
         });
+    }
+
+    protected function mapModels(array $row): void
+    {
+        $this->mappedAttributes = $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
+            return $this->mapModelAttributes($rowToMap, $row, $model);
+        });
+        dd($this->mappedAttributes);
     }
 
     protected function savingModel(Model $model, array $items): Model
@@ -138,7 +146,11 @@ class MapImportedContent
         if (array_key_exists($attribute, $modelCastings)) {
             $callback = $modelCastings[$attribute];
 
-            return $callback($row);
+            if (is_callable($callback)) {
+                return $callback($row);
+            }
+
+            return app()->make($callback)($value);
         }
 
         return $value;
