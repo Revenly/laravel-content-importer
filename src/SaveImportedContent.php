@@ -94,7 +94,7 @@ class SaveImportedContent implements ImportableModel
         }
 
         return tap($this->model, function ($model) use ($items) {
-            $model->forceFill($items);
+            $model->forceFill(array_merge($items));
 
             $model->save();
         });

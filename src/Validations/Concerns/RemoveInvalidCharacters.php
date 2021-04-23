@@ -1,14 +1,13 @@
 <?php
-
 namespace R64\ContentImport\Validations\Concerns;
 
 use Closure;
 
-class TrimString implements ValidationConcern
+class RemoveInvalidCharacters implements ValidationConcern
 {
     public function handle($content, Closure $next)
     {
-        $content = trim($content);
+        $content = preg_replace('/[^A-Za-z0-9-_@.]/', '', $content);
 
         return $next($content);
     }

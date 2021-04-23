@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use R64\ContentImport\Validations\Concerns\ValidationConcern;
+use R64\ContentImport\Validations\ValidationPipeContract;
+use R64\ContentImport\Validations\ValidationPipeline;
 
 class MapImportedContent
 {
@@ -29,6 +32,8 @@ class MapImportedContent
     protected $canUpdateCallback = null;
 
     protected $mappedAttributes = [];
+
+    protected $mappedRows = [];
 
     public function __construct(array $content, ImportableModel $importableModel = null)
     {
@@ -72,28 +77,36 @@ class MapImportedContent
         return $this;
     }
 
-    public function map(): void
+    public function map(): self
     {
-        $this->content->each(function ($row) {
-            $this->mapModels($row);
-        });
+        $this->mappedRows = $this->content->map(function ($row) {
+            return [
+                'row' => $row,
+                'data' => $this->mapRow($row)
+            ];
+        })->toArray();
+
+        return $this;
     }
 
-    public function saveModels()
+    public function store(): self
     {
-        $this->mappedAttributes->map(function ($items, string $model) {
+        collect($this->mappedAttributes)->map(function ($items, string $model) {
             $model = $this->savingModel(new $model, $items);
 
             $this->setModel($model);
         });
+
+        return $this;
     }
 
-    protected function mapModels(array $row): void
+    protected function mapRow(array $row): array
     {
         $this->mappedAttributes = $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
             return $this->mapModelAttributes($rowToMap, $row, $model);
-        });
-        dd($this->mappedAttributes);
+        })->toArray();
+
+        return $this->mappedAttributes;
     }
 
     protected function savingModel(Model $model, array $items): Model
@@ -133,7 +146,7 @@ class MapImportedContent
             return $value;
         }
 
-        $castings = $this->casts->filter(function ($value, $key)  use ($model) {
+        $castings = $this->casts->filter(function ($value, $key) use ($model) {
             return $key === $model;
         });
 
@@ -150,10 +163,21 @@ class MapImportedContent
                 return $callback($row);
             }
 
-            return app()->make($callback)($value);
+            if (is_string($callback) && $this->isImplementingValidationContract($callback)) {
+                return app()->make($callback)($value);
+            }
+
+            if (is_array($callback)) {
+                return (new ValidationPipeline)($value, $callback);
+            }
         }
 
         return $value;
+    }
+
+    protected function isImplementingValidationContract(string $callback): bool
+    {
+        return in_array(ValidationPipeContract::class, class_implements($callback));
     }
 
     protected function isRelationAttribute($attribute): bool
@@ -164,6 +188,20 @@ class MapImportedContent
     protected function setModel(Model $model): void
     {
         $this->models[get_class($model)] = $model;
+    }
+
+    public function getMappedAttributes(string $model = null): array
+    {
+        if ($model) {
+            return $this->mappedAttributes[$model];
+        }
+
+        return $this->mappedAttributes;
+    }
+
+    public function getMappedRows(): array
+    {
+        return $this->mappedRows;
     }
 
     protected function setDependencies(string $model, array $dependencies): void

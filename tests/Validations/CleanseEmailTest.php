@@ -1,8 +1,7 @@
 <?php
-namespace Tests\Validations;
+namespace R64\ContentImport\Tests\Validations;
 
-use Illuminate\Foundation\Testing\TestCase;
-
+use R64\ContentImport\Tests\TestCase;
 class CleanseEmailTest extends TestCase
 {
 }
