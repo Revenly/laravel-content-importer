@@ -89,14 +89,14 @@ class SaveImportedContent implements ImportableModel
             $items = $this->handleItemsBeforeUpdate($existedModel, $items);
 
             return tap($existedModel, function ($model) use ($items) {
-                $model->forceFill($items)->update();
+                $model->forceFill($items)->savingFromImport();
             });
         }
 
         return tap($this->model, function ($model) use ($items) {
-            $model->forceFill($items);
+            $model->forceFill(array_merge($items));
 
-            $model->save();
+            $model->savingFromImport();
         });
     }
 
@@ -127,6 +127,10 @@ class SaveImportedContent implements ImportableModel
     protected function getModelIfExists(array $items): ?Model
     {
         $uniqueFields = array_key_exists(get_class($this->model), $this->uniqueFields) ? $this->uniqueFields[get_class($this->model)] : [];
+
+        if (!$uniqueFields) {
+            return null;
+        }
 
         $query = $this->model::query()->where(function ($query) use ($items, $uniqueFields) {
             collect($uniqueFields)->each(function ($unique) use ($query, $items) {

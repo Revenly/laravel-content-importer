@@ -1,7 +1,12 @@
 <?php
-namespace Tests;
+namespace R64\ContentImport\Tests;
 
+use Illuminate\Database\Eloquent\Model;
 use R64\ContentImport\MapImportedContent;
+use R64\ContentImport\Validations\CleanseEmail;
+use R64\ContentImport\Validations\Concerns\LowerCaseString;
+use R64\ContentImport\Validations\Concerns\RemoveInvalidCharacters;
+use R64\ContentImport\Validations\Concerns\TrimString;
 
 class MapImportedContentTest extends TestCase
 {
@@ -49,5 +54,71 @@ class MapImportedContentTest extends TestCase
         $this->mapImportedContent = (new MapImportedContent($this->data));
     }
 
-    // Mockery
+    /** @test */
+    public function can_cleanse_an_email_with_classes()
+    {
+        $this->data = [
+            [
+                "emailaddress" => "DRew.christmas@deltaoutsourcegroup.com,$",
+            ]
+        ];
+
+        $this->mapImportedContent = (new MapImportedContent($this->data));
+
+        $contents = $this->mapImportedContent->withMappedRow([
+            Model::class => [
+                'email' => 'emailaddress',
+            ]
+        ])
+            ->withUniqueFields([
+                Model::class => [
+                    'email',
+                ]
+            ])
+            ->withCasting([
+                Model::class => [
+                    'email' => CleanseEmail::class,
+                ]
+            ])
+            ->map()
+            ->getMappedRows();
+
+        $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $contents[0]['data'][Model::class]['email']);
+    }
+
+    /** @test */
+    public function can_cleanse_an_email_with_array_of_concerns()
+    {
+        $this->data = [
+            [
+                "emailaddress" => "DRew.christmas@deltaoutsourcegroup.com,$",
+            ]
+        ];
+
+        $this->mapImportedContent = (new MapImportedContent($this->data));
+
+        $contents = $this->mapImportedContent->withMappedRow([
+            Model::class => [
+                'email' => 'emailaddress',
+            ]
+        ])
+            ->withUniqueFields([
+                Model::class => [
+                    'email',
+                ]
+            ])
+            ->withCasting([
+                Model::class => [
+                    'email' => [
+                        TrimString::class,
+                        LowerCaseString::class,
+                        RemoveInvalidCharacters::class
+                    ]
+                ]
+            ])
+            ->map()
+            ->getMappedRows();
+
+        $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $contents[0]['data'][Model::class]['email']);
+    }
 }
