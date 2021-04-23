@@ -5,9 +5,7 @@ namespace R64\ContentImport;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use R64\ContentImport\Validations\Concerns\ValidationConcern;
 use R64\ContentImport\Validations\ValidationPipeContract;
 use R64\ContentImport\Validations\ValidationPipeline;
 
@@ -31,11 +29,9 @@ class MapImportedContent
 
     protected $canUpdateCallback = null;
 
-    protected $mappedAttributes = [];
-
     protected $mappedRows = [];
 
-    public function __construct(array $content, ImportableModel $importableModel = null)
+    public function __construct(array $content = [], ImportableModel $importableModel = null)
     {
         $this->content = collect($content);
 
@@ -89,12 +85,20 @@ class MapImportedContent
         return $this;
     }
 
-    public function store(): self
+    public function store(array $mappedRows = []): self
     {
-        collect($this->mappedAttributes)->map(function ($items, string $model) {
-            $model = $this->savingModel(new $model, $items);
+        $storeRows = $this->mappedRows;
 
-            $this->setModel($model);
+        if ($mappedRows) {
+            $storeRows = $mappedRows;
+        }
+
+        collect($storeRows)->pluck('data')->map(function ($rowData) {
+            collect($rowData)->each(function (array $items, string $model) {
+                $model = $this->savingModel(new $model, $items);
+
+                $this->setModel($model);
+            });
         });
 
         return $this;
@@ -102,20 +106,18 @@ class MapImportedContent
 
     protected function mapRow(array $row): array
     {
-        $this->mappedAttributes = $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
+        return $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
             return $this->mapModelAttributes($rowToMap, $row, $model);
         })->toArray();
-
-        return $this->mappedAttributes;
     }
 
     protected function savingModel(Model $model, array $items): Model
     {
         return $this->importableModel
-        ->withModel(new $model)
-        ->canUpdate($this->canUpdateCallback)
-        ->withBeforeUpdate($this->beforeUpdate)
-        ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
+            ->withModel(new $model)
+            ->canUpdate($this->canUpdateCallback)
+            ->withBeforeUpdate($this->beforeUpdate)
+            ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
     }
 
     protected function mapModelAttributes(array $rowToMap, array $row, string $model): array
@@ -188,15 +190,6 @@ class MapImportedContent
     protected function setModel(Model $model): void
     {
         $this->models[get_class($model)] = $model;
-    }
-
-    public function getMappedAttributes(string $model = null): array
-    {
-        if ($model) {
-            return $this->mappedAttributes[$model];
-        }
-
-        return $this->mappedAttributes;
     }
 
     public function getMappedRows(): array

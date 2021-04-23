@@ -65,7 +65,7 @@ class MapImportedContentTest extends TestCase
 
         $this->mapImportedContent = (new MapImportedContent($this->data));
 
-        $this->mapImportedContent->withMappedRow([
+        $contents = $this->mapImportedContent->withMappedRow([
             Model::class => [
                 'email' => 'emailaddress',
             ]
@@ -80,11 +80,10 @@ class MapImportedContentTest extends TestCase
                     'email' => CleanseEmail::class,
                 ]
             ])
-            ->map();
+            ->map()
+            ->getMappedRows();
 
-        $attributes = $this->mapImportedContent->getMappedAttributes(Model::class);
-
-        $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $attributes['email']);
+        $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $contents[0]['data'][Model::class]['email']);
     }
 
     /** @test */
@@ -98,7 +97,7 @@ class MapImportedContentTest extends TestCase
 
         $this->mapImportedContent = (new MapImportedContent($this->data));
 
-        $this->mapImportedContent->withMappedRow([
+        $contents = $this->mapImportedContent->withMappedRow([
             Model::class => [
                 'email' => 'emailaddress',
             ]
@@ -117,10 +116,9 @@ class MapImportedContentTest extends TestCase
                     ]
                 ]
             ])
-            ->map();
+            ->map()
+            ->getMappedRows();
 
-        $attributes = $this->mapImportedContent->getMappedAttributes(Model::class);
-
-        $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $attributes['email']);
+        $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $contents[0]['data'][Model::class]['email']);
     }
 }
