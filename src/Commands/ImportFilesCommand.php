@@ -48,7 +48,7 @@ class ImportFilesCommand extends Command
         collect($fileSystem->allDirectories(config('content_import.directory')))
             ->lazy()
             ->each(fn($path) =>
-                collect($fileSystem->allFiles($path))->each(fn($file) => $this->saveImportedFile($file))
+            collect($fileSystem->allFiles($path))->each(fn($file) => $this->saveImportedFile($file))
             );
     }
 

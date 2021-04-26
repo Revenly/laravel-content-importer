@@ -39,4 +39,9 @@ class ImportedContent extends Model
     {
         return $this->belongsTo(File::class);
     }
+
+    public function markAsProcessed()
+    {
+        $this->update(['processed_at' => now()]);
+    }
 }
