@@ -8,11 +8,10 @@ use R64\ContentImport\Tests\TestCase;
 
 class ProcessFileTest extends TestCase
 {
-    /**
-     * @test
-     */
+    /**@test*/
     public function should_process_imported_file()
     {
+        $this->markTestSkipped();
         Excel::fake();
 
         $file = factory(File::class)->create();

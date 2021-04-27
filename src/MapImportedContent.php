@@ -6,8 +6,12 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use R64\ContentImport\Validations\ValidationPipeContract;
-use R64\ContentImport\Validations\ValidationPipeline;
+use R64\ContentImport\Castings\{
+    CastingPipeContract,
+    CastingPipeline
+};
+use R64\ContentImport\Events\ValidationFailed;
+use R64\ContentImport\Exceptions\ValidationFailedException;
 
 class MapImportedContent
 {
@@ -31,6 +35,8 @@ class MapImportedContent
 
     protected $mappedRows = [];
 
+    protected $validators;
+
     public function __construct(array $content = [], ImportableModel $importableModel = null)
     {
         $this->content = collect($content);
@@ -48,6 +54,13 @@ class MapImportedContent
     public function withCasting(array $casts): self
     {
         $this->casts = collect($casts);
+
+        return $this;
+    }
+
+    public function withValidations(array $validators): self
+    {
+        $this->validators = collect($validators);
 
         return $this;
     }
@@ -135,9 +148,11 @@ class MapImportedContent
         })->toArray();
     }
 
-    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row): ?string
+    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row)
     {
-        return $this->castAttribute(...func_get_args());
+        if($this->validateAttribute(...func_get_args())){
+            return $this->castAttribute(...func_get_args());
+        }
     }
 
     protected function castAttribute(string $column, string $attribute, string $model, array $row): ?string
@@ -170,16 +185,67 @@ class MapImportedContent
             }
 
             if (is_array($callback)) {
-                return (new ValidationPipeline)($value, $callback);
+                return (new CastingPipeline)($value, $callback);
             }
         }
 
         return $value;
     }
 
+    protected function validateAttribute(string $column, string $attribute, string $model, array $row): ?bool
+    {
+        $value = array_key_exists($column, $row) ? $row[$column] : null;
+
+        if (!$this->validators) {
+            return true;
+        }
+
+        $validation = $this->validators->filter(function ($value, $key) use ($model) {
+            return $key === $model;
+        });
+
+        if (!$validation) {
+            return true;
+        }
+
+        $modelValidations = Arr::get($validation, $model, []);
+
+        if (array_key_exists($attribute, $modelValidations)) {
+            $callback = $modelValidations[$attribute];
+
+            if (is_callable($callback)) {
+
+                $passed = $callback($value);
+
+                if(!$passed) {
+                    ValidationFailed::dispatch($value);
+                    throw new ValidationFailedException("callback validation failed for $attribute");
+                }
+
+                return $passed;
+            }
+
+            if (is_string($callback) && $this->isImplementingValidationContract($callback)) {
+                $passed = app()->make($callback)($value);
+
+                if(!$passed) {
+                    ValidationFailed::dispatch($value);
+                    throw new ValidationFailedException("callback validation failed for $attribute");
+                }
+                return $passed;
+            }
+
+            if (is_array($callback)) {
+                return (new CastingPipeline)($value, $callback);
+            }
+        }
+
+        return false;
+    }
+
     protected function isImplementingValidationContract(string $callback): bool
     {
-        return in_array(ValidationPipeContract::class, class_implements($callback));
+        return in_array(CastingPipeContract::class, class_implements($callback));
     }
 
     protected function isRelationAttribute($attribute): bool

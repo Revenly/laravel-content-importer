@@ -1,13 +1,13 @@
 <?php
 
-namespace R64\ContentImport\Validations;
+namespace R64\ContentImport\Castings;
 
 use Illuminate\Pipeline\Pipeline;
-use R64\ContentImport\Validations\Concerns\LowerCaseString;
-use R64\ContentImport\Validations\Concerns\RemoveInvalidCharacters;
-use R64\ContentImport\Validations\Concerns\TrimString;
+use R64\ContentImport\Castings\Concerns\LowerCaseString;
+use R64\ContentImport\Castings\Concerns\RemoveInvalidCharacters;
+use R64\ContentImport\Castings\Concerns\TrimString;
 
-class ValidationPipeline implements ValidationPipeContract
+class CastingPipeline implements CastingPipeContract
 {
     public function __invoke($content, array $concerns = [])
     {

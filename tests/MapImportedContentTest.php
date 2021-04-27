@@ -1,12 +1,17 @@
 <?php
 namespace R64\ContentImport\Tests;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Event;
 use R64\ContentImport\MapImportedContent;
-use R64\ContentImport\Validations\CleanseEmail;
-use R64\ContentImport\Validations\Concerns\LowerCaseString;
-use R64\ContentImport\Validations\Concerns\RemoveInvalidCharacters;
-use R64\ContentImport\Validations\Concerns\TrimString;
+use R64\ContentImport\Castings\CleanseEmail;
+use R64\ContentImport\Castings\Concerns\LowerCaseString;
+use R64\ContentImport\Castings\Concerns\RemoveInvalidCharacters;
+use R64\ContentImport\Castings\Concerns\TrimString;
+use R64\ContentImport\Events\ValidationFailed;
+use R64\ContentImport\Exceptions\ValidationFailedException;
+use R64\ContentImport\Validations\IsNotNull;
 
 class MapImportedContentTest extends TestCase
 {
@@ -120,5 +125,73 @@ class MapImportedContentTest extends TestCase
             ->getMappedRows();
 
         $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $contents[0]['data'][Model::class]['email']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_can_validate_data()
+    {
+        Event::fake();
+        try{
+            $this->data = [
+                [
+                    "phone" => ""
+                ]
+            ];
+
+            $this->mapImportedContent = (new MapImportedContent($this->data));
+
+            $result = $this->mapImportedContent
+            ->withMappedRow([
+                Customer::class => [
+                    'phone' => 'phone'
+                ]
+            ])
+            ->withValidations([
+                Customer::class => [
+                    'phone' => fn($value) => $value !== ''
+                ]
+            ])
+            ->map()
+            ->getMappedRows();
+        } catch(Exception $e) {
+            $this->assertInstanceOf(ValidationFailedException::class, $e);
+            $this->assertEquals($e->getMessage(), 'callback validation failed for phone');
+        }
+    }
+
+    /** @test */
+    public function fires_event_when_validation_fails()
+    {
+        Event::fake();
+        try{
+            $this->data = [
+                [
+                    "phone" => ""
+                ]
+            ];
+
+            $this->mapImportedContent = (new MapImportedContent($this->data));
+
+            $result = $this->mapImportedContent
+            ->withMappedRow([
+                Customer::class => [
+                    'phone' => 'phone'
+                ]
+            ])
+            ->withValidations([
+                Customer::class => [
+                    'phone' => fn($value) => $value !== ''
+                ]
+            ])
+            ->map()
+            ->getMappedRows();
+        } catch(Exception $e) {
+            $this->assertInstanceOf(ValidationFailedException::class, $e);
+            $this->assertEquals($e->getMessage(), 'callback validation failed for phone');
+        }
+
+        Event::assertDispatched(ValidationFailed::class);
     }
 }

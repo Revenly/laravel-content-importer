@@ -1,7 +1,7 @@
 <?php
-namespace R64\ContentImport\Validations;
+namespace R64\ContentImport\Castings;
 
-interface ValidationPipeContract
+interface CastingPipeContract
 {
     public function __invoke($content, array $concerns = []);
 

@@ -1,5 +1,5 @@
 <?php
-namespace R64\ContentImport\Validations\Concerns;
+namespace R64\ContentImport\Castings\Concerns;
 
 use Closure;
 
