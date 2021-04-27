@@ -150,9 +150,10 @@ class MapImportedContent
 
     protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row)
     {
-        if($this->validateAttribute(...func_get_args())){
-            return $this->castAttribute(...func_get_args());
-        }
+        $this->validateAttribute(...func_get_args());
+
+        return $this->castAttribute(...func_get_args());
+        //}
     }
 
     protected function castAttribute(string $column, string $attribute, string $model, array $row): ?string

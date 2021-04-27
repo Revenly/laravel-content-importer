@@ -194,4 +194,30 @@ class MapImportedContentTest extends TestCase
 
         Event::assertDispatched(ValidationFailed::class);
     }
+
+     /** @test */
+     public function casting_should_run_if_validation_is_empty()
+     {
+         $this->data = [["email" => "JohDOe@email.com"]];
+
+         $this->mapImportedContent = (new MapImportedContent($this->data));
+
+         $result = $this->mapImportedContent
+             ->withMappedRow([
+                 Model::class => [
+                    'email' => 'email'
+                 ]
+             ])->withValidations([
+                Model::class => []
+             ])
+             ->withCasting([
+                Model::class => [
+                    'email' => [LowerCaseString::class]
+                ]
+             ])
+             ->map()
+             ->getMappedRows();
+
+         $this->assertEquals('johdoe@email.com', $result[0]['data'][Model::class]['email']);
+     }
 }
