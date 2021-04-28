@@ -1,13 +1,10 @@
 <?php
 
-namespace R64\ContentImport\Castings;
+namespace R64\ContentImport\Pipelines;
 
-use Illuminate\Pipeline\Pipeline;
-use R64\ContentImport\Castings\Concerns\LowerCaseString;
-use R64\ContentImport\Castings\Concerns\RemoveInvalidCharacters;
-use R64\ContentImport\Castings\Concerns\TrimString;
+use Illuminate\Pipeline\Pipeline as LaravelPipeline;
 
-class CastingPipeline implements CastingPipeContract
+class Pipeline implements PipelineContract
 {
     public function __invoke($content, array $concerns = [])
     {
@@ -20,7 +17,7 @@ class CastingPipeline implements CastingPipeContract
             $concerns = $this->concerns;
         }
 
-        return app(Pipeline::class)
+        return app(LaravelPipeline::class)
             ->send($content)
             ->through($concerns)
             ->then(function ($content) {

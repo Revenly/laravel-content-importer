@@ -12,6 +12,8 @@ use R64\ContentImport\Castings\{
 };
 use R64\ContentImport\Events\ValidationFailed;
 use R64\ContentImport\Exceptions\ValidationFailedException;
+use R64\ContentImport\Pipelines\Pipeline;
+use R64\ContentImport\Pipelines\PipelineContract;
 
 class MapImportedContent
 {
@@ -153,7 +155,6 @@ class MapImportedContent
         $this->validateAttribute(...func_get_args());
 
         return $this->castAttribute(...func_get_args());
-        //}
     }
 
     protected function castAttribute(string $column, string $attribute, string $model, array $row): ?string
@@ -172,7 +173,7 @@ class MapImportedContent
             return $value;
         }
 
-        $modelCastings = Arr::get($castings, $model, []);
+        $modelCastings = (array) Arr::get($castings, $model, []);
 
         if (array_key_exists($attribute, $modelCastings)) {
             $callback = $modelCastings[$attribute];
@@ -181,12 +182,12 @@ class MapImportedContent
                 return $callback($row);
             }
 
-            if (is_string($callback) && $this->isImplementingValidationContract($callback)) {
+            if (is_string($callback) && $this->implementsPipelineContract($callback)) {
                 return app()->make($callback)($value);
             }
 
             if (is_array($callback)) {
-                return (new CastingPipeline)($value, $callback);
+                return (new Pipeline)($value, $callback);
             }
         }
 
@@ -209,44 +210,40 @@ class MapImportedContent
             return true;
         }
 
-        $modelValidations = Arr::get($validation, $model, []);
+        $modelValidations = (array) Arr::get($validation, $model, []);
 
         if (array_key_exists($attribute, $modelValidations)) {
             $callback = $modelValidations[$attribute];
 
             if (is_callable($callback)) {
-
                 $passed = $callback($value);
 
-                if(!$passed) {
+                if (!$passed) {
                     ValidationFailed::dispatch($value);
+
                     throw new ValidationFailedException("callback validation failed for $attribute");
                 }
 
                 return $passed;
             }
 
-            if (is_string($callback) && $this->isImplementingValidationContract($callback)) {
+            if (is_string($callback) && $this->implementsPipelineContract($callback)) {
                 $passed = app()->make($callback)($value);
 
-                if(!$passed) {
-                    ValidationFailed::dispatch($value);
-                    throw new ValidationFailedException("callback validation failed for $attribute");
-                }
                 return $passed;
             }
 
             if (is_array($callback)) {
-                return (new CastingPipeline)($value, $callback);
+                return (new Pipeline)($value, $callback);
             }
         }
 
         return false;
     }
 
-    protected function isImplementingValidationContract(string $callback): bool
+    protected function implementsPipelineContract(string $callback): bool
     {
-        return in_array(CastingPipeContract::class, class_implements($callback));
+        return in_array(PipelineContract::class, class_implements($callback));
     }
 
     protected function isRelationAttribute($attribute): bool

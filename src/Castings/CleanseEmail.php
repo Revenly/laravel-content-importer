@@ -2,12 +2,12 @@
 
 namespace R64\ContentImport\Castings;
 
-use Illuminate\Pipeline\Pipeline;
 use R64\ContentImport\Castings\Concerns\LowerCaseString;
 use R64\ContentImport\Castings\Concerns\RemoveInvalidCharacters;
 use R64\ContentImport\Castings\Concerns\TrimString;
+use R64\ContentImport\Pipelines\Pipeline;
 
-class CleanseEmail extends CastingPipeline
+class CleanseEmail extends Pipeline
 {
     public $concerns = [
         TrimString::class,

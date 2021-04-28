@@ -1,7 +1,7 @@
 <?php
-namespace R64\ContentImport\Castings;
+namespace R64\ContentImport\Pipelines;
 
-interface CastingPipeContract
+interface PipelineContract
 {
     public function __invoke($content, array $concerns = []);
 

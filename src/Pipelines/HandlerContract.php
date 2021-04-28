@@ -1,10 +1,10 @@
 <?php
 
-namespace R64\ContentImport\Castings\Concerns;
+namespace R64\ContentImport\Pipelines;
 
 use Closure;
 
-interface ValidationConcern
+interface HandlerContract
 {
     public function handle($content, Closure $next);
 }
