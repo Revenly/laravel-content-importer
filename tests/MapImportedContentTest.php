@@ -12,6 +12,7 @@ use R64\ContentImport\Castings\Concerns\RemoveInvalidCharacters;
 use R64\ContentImport\Castings\Concerns\TrimString;
 use R64\ContentImport\Events\ValidationFailed;
 use R64\ContentImport\Exceptions\ValidationFailedException;
+use R64\ContentImport\Validations\Concerns\IsValidEmail;
 use R64\ContentImport\Validations\ValidEmail;
 
 class MapImportedContentTest extends TestCase
@@ -133,20 +134,20 @@ class MapImportedContentTest extends TestCase
      */
     public function it_can_validate_data()
     {
-        Event::fake();
-        try {
-            $this->data = [
+        $this->data = [
                 [
-                    "phone" => ""
+                    "phone" => "",
+                    "email" => "email"
                 ]
-            ];
+        ];
 
             $this->mapImportedContent = (new MapImportedContent($this->data));
 
             $result = $this->mapImportedContent
                 ->withMappedRow([
                     Customer::class => [
-                        'phone' => 'phone'
+                        'phone' => 'phone',
+                        'email' => 'email'
                     ]
                 ])
                 ->withValidations([
@@ -156,10 +157,7 @@ class MapImportedContentTest extends TestCase
                 ])
                 ->map()
                 ->getMappedRows();
-        } catch (Exception $e) {
-            $this->assertInstanceOf(ValidationFailedException::class, $e);
-            $this->assertEquals($e->getMessage(), 'callback validation failed for phone');
-        }
+
     }
 
     /** @test */
@@ -224,36 +222,40 @@ class MapImportedContentTest extends TestCase
 
 
     /** @test */
-    public function can_valid_an_email()
+    public function can_validate_an_email()
     {
-        Event::fake();
-
-        try {
             $this->data = [
                 [
-                    "email" => "email"
+                    "email" => "ab",
+                    "phone" => "",
+                    'name' => '2342342'
                 ]
             ];
 
             $this->mapImportedContent = (new MapImportedContent($this->data));
 
-            $result = $this->mapImportedContent
+             $this->mapImportedContent
                 ->withMappedRow([
+                    Model::class => [
+                        'email' => 'ok',
+                        'phone' => 'phone',
+                    ],
                     Customer::class => [
-                        'email' => 'email'
+                        'name' => 'name'
                     ]
                 ])
                 ->withValidations([
+                    Model::class => [
+                        'email' => [IsValidEmail::class],
+                        'phone' => fn($value) => $value !== ''
+                    ],
                     Customer::class => [
-                        'email' => ValidEmail::class
+                        'name' => fn($value) => $value !== ''
                     ]
                 ])
-                ->map()
-                ->getMappedRows();
-        } catch (Exception $e) {
-            $this->assertInstanceOf(ValidationFailedException::class, $e);
-        }
+                ->map();
 
-        Event::assertDispatched(ValidationFailed::class);
+              dump($this->mapImportedContent->getDirtyRows());
+              dump($this->mapImportedContent->getMappedRows());
     }
 }

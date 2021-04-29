@@ -6,10 +6,6 @@ use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use R64\ContentImport\Castings\{
-    CastingPipeContract,
-    CastingPipeline
-};
 use R64\ContentImport\Events\ValidationFailed;
 use R64\ContentImport\Exceptions\ValidationFailedException;
 use R64\ContentImport\Pipelines\Pipeline;
@@ -18,6 +14,8 @@ use R64\ContentImport\Pipelines\PipelineContract;
 class MapImportedContent
 {
     protected $content;
+
+    protected $dirtyKeys = [];
 
     protected $rowsToMap;
 
@@ -38,6 +36,8 @@ class MapImportedContent
     protected $mappedRows = [];
 
     protected $validators;
+
+    protected $dirtyRows = [];
 
     public function __construct(array $content = [], ImportableModel $importableModel = null)
     {
@@ -90,7 +90,7 @@ class MapImportedContent
 
     public function map(): self
     {
-        $this->mappedRows = $this->content->map(function ($row) {
+         $this->mappedRows = $this->content->map(function ($row) {
             return [
                 'row' => $row,
                 'data' => $this->mapRow($row)
@@ -122,8 +122,9 @@ class MapImportedContent
     protected function mapRow(array $row): array
     {
         return $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
-            return $this->mapModelAttributes($rowToMap, $row, $model);
+             return $this->mapModelAttributes($rowToMap, $row, $model);
         })->toArray();
+
     }
 
     protected function savingModel(Model $model, array $items): Model
@@ -141,24 +142,28 @@ class MapImportedContent
 
         $rowToMap = collect($rowToMap)->forget('depends_on');
 
-        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model) {
+
+        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
             if ($this->isRelationAttribute($attribute)) {
                 return $this->mapModelAttributes($column, $row, $model);
             }
-
-            return $this->retrieveColumnFromRow($column, $attribute, $model, $row);
+            return $this->retrieveColumnFromRow($column, $attribute, $model, $row, $rowToMap);
         })->toArray();
     }
 
-    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row)
+    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row, $toMap)
     {
-        $this->validateAttribute(...func_get_args());
-
-        return $this->castAttribute(...func_get_args());
+        if ($this->validateAttribute(...func_get_args())) {
+            return $this->castAttribute(...func_get_args());
+        } else {
+            array_push($this->dirtyRows, $toMap);
+            return ;
+        }
     }
 
     protected function castAttribute(string $column, string $attribute, string $model, array $row): ?string
     {
+
         $value = array_key_exists($column, $row) ? $row[$column] : null;
 
         if (!$this->casts) {
@@ -194,7 +199,7 @@ class MapImportedContent
         return $value;
     }
 
-    protected function validateAttribute(string $column, string $attribute, string $model, array $row): ?bool
+    protected function validateAttribute(string $column, string $attribute, string $model, array $row)
     {
         $value = array_key_exists($column, $row) ? $row[$column] : null;
 
@@ -216,29 +221,19 @@ class MapImportedContent
             $callback = $modelValidations[$attribute];
 
             if (is_callable($callback)) {
-                $passed = $callback($value);
-
-                if (!$passed) {
-                    ValidationFailed::dispatch($value);
-
-                    throw new ValidationFailedException("callback validation failed for $attribute");
-                }
-
-                return $passed;
-            }
-
-            if (is_string($callback) && $this->implementsPipelineContract($callback)) {
-                $passed = app()->make($callback)($value);
-
-                return $passed;
+                return $callback($value);
             }
 
             if (is_array($callback)) {
-                return (new Pipeline)($value, $callback);
-            }
-        }
 
-        return false;
+                foreach ($callback as $class) {
+                    return (bool) app($class)($value);
+                }
+            }
+
+        } else {
+            return true;
+        }
     }
 
     protected function implementsPipelineContract(string $callback): bool
@@ -259,6 +254,12 @@ class MapImportedContent
     public function getMappedRows(): array
     {
         return $this->mappedRows;
+    }
+
+    public function getDirtyRows(): array
+    {
+
+        return $this->dirtyRows;
     }
 
     protected function setDependencies(string $model, array $dependencies): void
