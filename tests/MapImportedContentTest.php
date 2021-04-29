@@ -129,71 +129,6 @@ class MapImportedContentTest extends TestCase
         $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $contents[0]['data'][Model::class]['email']);
     }
 
-    /**
-     * @test
-     */
-    public function it_can_validate_data()
-    {
-        $this->data = [
-                [
-                    "phone" => "",
-                    "email" => "email"
-                ]
-        ];
-
-            $this->mapImportedContent = (new MapImportedContent($this->data));
-
-            $result = $this->mapImportedContent
-                ->withMappedRow([
-                    Customer::class => [
-                        'phone' => 'phone',
-                        'email' => 'email'
-                    ]
-                ])
-                ->withValidations([
-                    Customer::class => [
-                        'phone' => fn ($value) => $value !== ''
-                    ]
-                ])
-                ->map()
-                ->getMappedRows();
-
-    }
-
-    /** @test */
-    public function fires_event_when_validation_fails()
-    {
-        Event::fake();
-        try {
-            $this->data = [
-                [
-                    "phone" => ""
-                ]
-            ];
-
-            $this->mapImportedContent = (new MapImportedContent($this->data));
-
-            $result = $this->mapImportedContent
-                ->withMappedRow([
-                    Customer::class => [
-                        'phone' => 'phone'
-                    ]
-                ])
-                ->withValidations([
-                    Customer::class => [
-                        'phone' => fn ($value) => $value !== ''
-                    ]
-                ])
-                ->map()
-                ->getMappedRows();
-        } catch (Exception $e) {
-            $this->assertInstanceOf(ValidationFailedException::class, $e);
-            $this->assertEquals($e->getMessage(), 'callback validation failed for phone');
-        }
-
-        Event::assertDispatched(ValidationFailed::class);
-    }
-
     /** @test */
     public function casting_should_run_if_validation_is_empty()
     {
@@ -255,7 +190,7 @@ class MapImportedContentTest extends TestCase
                 ])
                 ->map();
 
-              dump($this->mapImportedContent->getDirtyRows());
-              dump($this->mapImportedContent->getMappedRows());
+              $this->assertCount(1, $this->mapImportedContent->getDirtyRows());
+              $this->assertCount(1, $this->mapImportedContent->getMappedRows());
     }
 }
