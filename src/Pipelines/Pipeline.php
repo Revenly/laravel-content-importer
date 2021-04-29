@@ -1,13 +1,10 @@
 <?php
 
-namespace R64\ContentImport\Validations;
+namespace R64\ContentImport\Pipelines;
 
-use Illuminate\Pipeline\Pipeline;
-use R64\ContentImport\Validations\Concerns\LowerCaseString;
-use R64\ContentImport\Validations\Concerns\RemoveInvalidCharacters;
-use R64\ContentImport\Validations\Concerns\TrimString;
+use Illuminate\Pipeline\Pipeline as LaravelPipeline;
 
-class ValidationPipeline implements ValidationPipeContract
+class Pipeline implements PipelineContract
 {
     public function __invoke($content, array $concerns = [])
     {
@@ -20,7 +17,7 @@ class ValidationPipeline implements ValidationPipeContract
             $concerns = $this->concerns;
         }
 
-        return app(Pipeline::class)
+        return app(LaravelPipeline::class)
             ->send($content)
             ->through($concerns)
             ->then(function ($content) {

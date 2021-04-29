@@ -1,12 +1,19 @@
 <?php
+
 namespace R64\ContentImport\Tests;
 
+use Exception;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Event;
 use R64\ContentImport\MapImportedContent;
-use R64\ContentImport\Validations\CleanseEmail;
-use R64\ContentImport\Validations\Concerns\LowerCaseString;
-use R64\ContentImport\Validations\Concerns\RemoveInvalidCharacters;
-use R64\ContentImport\Validations\Concerns\TrimString;
+use R64\ContentImport\Castings\CleanseEmail;
+use R64\ContentImport\Castings\Concerns\LowerCaseString;
+use R64\ContentImport\Castings\Concerns\RemoveInvalidCharacters;
+use R64\ContentImport\Castings\Concerns\TrimString;
+use R64\ContentImport\Events\ValidationFailed;
+use R64\ContentImport\Exceptions\ValidationFailedException;
+use R64\ContentImport\Validations\Concerns\IsValidEmail;
+use R64\ContentImport\Validations\ValidEmail;
 
 class MapImportedContentTest extends TestCase
 {
@@ -120,5 +127,70 @@ class MapImportedContentTest extends TestCase
             ->getMappedRows();
 
         $this->assertEquals('drew.christmas@deltaoutsourcegroup.com', $contents[0]['data'][Model::class]['email']);
+    }
+
+    /** @test */
+    public function casting_should_run_if_validation_is_empty()
+    {
+        $this->data = [["email" => "JohDOe@email.com"]];
+
+        $this->mapImportedContent = (new MapImportedContent($this->data));
+
+        $result = $this->mapImportedContent
+            ->withMappedRow([
+                Model::class => [
+                    'email' => 'email'
+                ]
+            ])->withValidations([
+                Model::class => []
+            ])
+            ->withCasting([
+                Model::class => [
+                    'email' => [LowerCaseString::class]
+                ]
+            ])
+            ->map()
+            ->getMappedRows();
+
+        $this->assertEquals('johdoe@email.com', $result[0]['data'][Model::class]['email']);
+    }
+
+
+    /** @test */
+    public function can_validate_an_email()
+    {
+            $this->data = [
+                [
+                    "email" => "ab",
+                    "phone" => "",
+                    'name' => '2342342'
+                ]
+            ];
+
+            $this->mapImportedContent = (new MapImportedContent($this->data));
+
+             $this->mapImportedContent
+                ->withMappedRow([
+                    Model::class => [
+                        'email' => 'ok',
+                        'phone' => 'phone',
+                    ],
+                    Customer::class => [
+                        'name' => 'name'
+                    ]
+                ])
+                ->withValidations([
+                    Model::class => [
+                        'email' => [IsValidEmail::class],
+                        'phone' => fn($value) => $value !== ''
+                    ],
+                    Customer::class => [
+                        'name' => fn($value) => $value !== ''
+                    ]
+                ])
+                ->map();
+
+              $this->assertCount(1, $this->mapImportedContent->getDirtyRows());
+              $this->assertCount(1, $this->mapImportedContent->getMappedRows());
     }
 }

@@ -5,13 +5,18 @@ namespace R64\ContentImport;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use R64\ContentImport\Validations\ValidationPipeContract;
-use R64\ContentImport\Validations\ValidationPipeline;
+use R64\ContentImport\Events\ValidationFailed;
+use R64\ContentImport\Exceptions\ValidationFailedException;
+use R64\ContentImport\Pipelines\Pipeline;
+use R64\ContentImport\Pipelines\PipelineContract;
 
 class MapImportedContent
 {
     protected $content;
+
+    protected $dirtyKeys = [];
 
     protected $rowsToMap;
 
@@ -31,6 +36,10 @@ class MapImportedContent
 
     protected $mappedRows = [];
 
+    protected $validators;
+
+    protected $dirtyRows = [];
+
     public function __construct(array $content = [], ImportableModel $importableModel = null)
     {
         $this->content = collect($content);
@@ -48,6 +57,13 @@ class MapImportedContent
     public function withCasting(array $casts): self
     {
         $this->casts = collect($casts);
+
+        return $this;
+    }
+
+    public function withValidations(array $validators): self
+    {
+        $this->validators = collect($validators);
 
         return $this;
     }
@@ -126,18 +142,28 @@ class MapImportedContent
 
         $rowToMap = collect($rowToMap)->forget('depends_on');
 
-        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model) {
+        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
             if ($this->isRelationAttribute($attribute)) {
                 return $this->mapModelAttributes($column, $row, $model);
             }
 
-            return $this->retrieveColumnFromRow($column, $attribute, $model, $row);
+            return $this->retrieveColumnFromRow($column, $attribute, $model, $row, $rowToMap);
         })->toArray();
     }
 
-    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row): ?string
+    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row, Collection $toMap)
     {
-        return $this->castAttribute(...func_get_args());
+        try {
+            $this->validateAttribute(...func_get_args());
+
+            return $this->castAttribute(...func_get_args());
+        } catch (ValidationFailedException $e) {
+            $this->dirtyRows[] = [
+                'row' => $row,
+                'data' => $toMap,
+                'failed_reason' => $e->getMessage()
+            ];
+        }
     }
 
     protected function castAttribute(string $column, string $attribute, string $model, array $row): ?string
@@ -156,7 +182,7 @@ class MapImportedContent
             return $value;
         }
 
-        $modelCastings = Arr::get($castings, $model, []);
+        $modelCastings = (array) Arr::get($castings, $model, []);
 
         if (array_key_exists($attribute, $modelCastings)) {
             $callback = $modelCastings[$attribute];
@@ -165,21 +191,58 @@ class MapImportedContent
                 return $callback($row);
             }
 
-            if (is_string($callback) && $this->isImplementingValidationContract($callback)) {
+            if (is_string($callback) && $this->implementsPipelineContract($callback)) {
                 return app()->make($callback)($value);
             }
 
             if (is_array($callback)) {
-                return (new ValidationPipeline)($value, $callback);
+                return (new Pipeline)($value, $callback);
             }
         }
 
         return $value;
     }
 
-    protected function isImplementingValidationContract(string $callback): bool
+    protected function validateAttribute(string $column, string $attribute, string $model, array $row)
     {
-        return in_array(ValidationPipeContract::class, class_implements($callback));
+        $value = array_key_exists($column, $row) ? $row[$column] : null;
+
+        if (!$this->validators) {
+            return true;
+        }
+
+        $validation = $this->validators->filter(function ($value, $key) use ($model) {
+            return $key === $model;
+        });
+
+        if (!$validation) {
+            return true;
+        }
+
+        $modelValidations = (array) Arr::get($validation, $model, []);
+
+        if (array_key_exists($attribute, $modelValidations)) {
+            $callback = $modelValidations[$attribute];
+
+            if (is_callable($callback)) {
+                return $callback($row);
+            }
+
+            if (is_string($callback) && $this->implementsPipelineContract($callback)) {
+                return app()->make($callback)($value);
+            }
+
+            if (is_array($callback)) {
+                return (new Pipeline)($value, $callback);
+            }
+        }
+
+        return true;
+    }
+
+    protected function implementsPipelineContract(string $callback): bool
+    {
+        return in_array(PipelineContract::class, class_implements($callback));
     }
 
     protected function isRelationAttribute($attribute): bool
@@ -195,6 +258,12 @@ class MapImportedContent
     public function getMappedRows(): array
     {
         return $this->mappedRows;
+    }
+
+    public function getDirtyRows(): array
+    {
+
+        return $this->dirtyRows;
     }
 
     protected function setDependencies(string $model, array $dependencies): void
