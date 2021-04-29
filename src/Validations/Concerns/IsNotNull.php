@@ -11,8 +11,6 @@ class IsNotNull implements HandlerContract
     public function handle($content, Closure $next)
     {
         if (is_null($content)) {
-            ValidationFailed::dispatch($content);
-
             throw new ValidationFailedException(self::class ." failed for ". $content);
         }
 

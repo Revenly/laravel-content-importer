@@ -7,10 +7,14 @@ use R64\ContentImport\Events\ValidationFailed;
 use R64\ContentImport\Exceptions\ValidationFailedException;
 use R64\ContentImport\Pipelines\HandlerContract;
 
-class IsValidEmail
+class IsValidEmail implements HandlerContract
 {
-    public function __invoke($content)
+    public function handle($content, Closure $next)
     {
-        return filter_var($content, FILTER_VALIDATE_EMAIL);
+        if (!filter_var($content, FILTER_VALIDATE_EMAIL)) {
+            throw new ValidationFailedException("Email is not valid");
+        }
+
+        return $next($next);
     }
 }
