@@ -25,9 +25,24 @@ class ImportedContent extends Model
         return $query->whereNull('processed_at');
     }
 
+    public function scopeUntransformed($query)
+    {
+        return $query->whereNull('transformed_at');
+    }
+
     public function scopeProcessed($query)
     {
         return $query->whereNotNull('processed_at');
+    }
+
+    public function scopeTransformed($query)
+    {
+        return $query->whereNotNull('transformed_at');
+    }
+
+    public function scopeToProcess($query)
+    {
+        return $query->whereNotNull('transformed_at')->whereNull('processed_at');
     }
 
     public function scopeProcessedBetween($query, $start, $end)
@@ -43,5 +58,10 @@ class ImportedContent extends Model
     public function markAsProcessed()
     {
         $this->update(['processed_at' => now()]);
+    }
+
+    public function markAsTransformed()
+    {
+        $this->update(['transformed_at' => now()]);
     }
 }

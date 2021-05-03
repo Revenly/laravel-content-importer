@@ -40,11 +40,13 @@ class MapImportedContent
 
     protected $dirtyRows = [];
 
-    public function __construct(array $content = [], ImportableModel $importableModel = null)
+    public function init(array $content = [], ImportableModel $importableModel = null): self
     {
         $this->content = collect($content);
 
         $this->setImportableModelClass($importableModel);
+
+        return $this;
     }
 
     public function withMappedRow(array $rowsToMap): self
