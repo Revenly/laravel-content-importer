@@ -112,6 +112,8 @@ class MapImportedContent
         }
 
         collect($storeRows)->pluck('data')->map(function ($rowData) {
+            $this->models = [];
+
             collect($rowData)->each(function (array $items, string $model) {
                 $model = $this->savingModel(new $model, $items);
 
