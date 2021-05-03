@@ -27,7 +27,7 @@ class ImportedContent extends Model
 
     public function scopeUntransformed($query)
     {
-        return $query->whereNotNull('transformed_at');
+        return $query->whereNull('transformed_at');
     }
 
     public function scopeProcessed($query)
