@@ -113,8 +113,13 @@ class MapImportedContent
 
         collect($storeRows)->pluck('data')->map(function ($rowData) {
             $this->models = [];
+            $this->dependencies = [];
 
             collect($rowData)->each(function (array $items, string $model) {
+                $this->setDependencies($model, Arr::get($items, 'depends_on', []));
+
+                $items = $this->removeUnwantedElementFromItems($items);
+
                 $model = $this->savingModel(new $model, $items);
 
                 $this->setModel($model);
@@ -142,13 +147,15 @@ class MapImportedContent
 
     protected function mapModelAttributes(array $rowToMap, array $row, string $model): array
     {
-        $this->setDependencies($model, Arr::get($rowToMap, 'depends_on', []));
-
-        $rowToMap = collect($rowToMap)->forget('depends_on');
+        $rowToMap = collect($rowToMap);
 
         return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
             if ($this->isRelationAttribute($attribute)) {
                 return $this->mapModelAttributes($column, $row, $model);
+            }
+
+            if (is_array($column)) {
+                return $column;
             }
 
             return $this->retrieveColumnFromRow($column, $attribute, $model, $row, $rowToMap);
@@ -168,6 +175,15 @@ class MapImportedContent
                 'failed_reason' => $e->getMessage()
             ];
         }
+    }
+
+    protected function removeUnwantedElementFromItems(array $items): array
+    {
+        $notNeeded = [
+            'depends_on'
+        ];
+
+        return collect($items)->forget($notNeeded)->toArray();
     }
 
     protected function castAttribute(string $column, string $attribute, string $model, array $row): ?string

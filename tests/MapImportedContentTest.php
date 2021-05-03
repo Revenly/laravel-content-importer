@@ -159,38 +159,38 @@ class MapImportedContentTest extends TestCase
     /** @test */
     public function can_validate_an_email()
     {
-            $this->data = [
-                [
-                    "email" => "ab",
-                    "phone" => "",
-                    'name' => '2342342'
+        $this->data = [
+            [
+                "email" => "ab",
+                "phone" => "",
+                'name' => '2342342'
+            ]
+        ];
+
+        $this->mapImportedContent = (new MapImportedContent)->init($this->data);
+
+        $this->mapImportedContent
+            ->withMappedRow([
+                Model::class => [
+                    'email' => 'ok',
+                    'phone' => 'phone',
+                ],
+                Customer::class => [
+                    'name' => 'name'
                 ]
-            ];
+            ])
+            ->withValidations([
+                Model::class => [
+                    'email' => [IsValidEmail::class],
+                    'phone' => fn ($value) => $value !== ''
+                ],
+                Customer::class => [
+                    'name' => fn ($value) => $value !== ''
+                ]
+            ])
+            ->map();
 
-            $this->mapImportedContent = (new MapImportedContent)->init($this->data);
-
-             $this->mapImportedContent
-                ->withMappedRow([
-                    Model::class => [
-                        'email' => 'ok',
-                        'phone' => 'phone',
-                    ],
-                    Customer::class => [
-                        'name' => 'name'
-                    ]
-                ])
-                ->withValidations([
-                    Model::class => [
-                        'email' => [IsValidEmail::class],
-                        'phone' => fn($value) => $value !== ''
-                    ],
-                    Customer::class => [
-                        'name' => fn($value) => $value !== ''
-                    ]
-                ])
-                ->map();
-
-              $this->assertCount(1, $this->mapImportedContent->getDirtyRows());
-              $this->assertCount(1, $this->mapImportedContent->getMappedRows());
+        $this->assertCount(1, $this->mapImportedContent->getDirtyRows());
+        $this->assertCount(1, $this->mapImportedContent->getMappedRows());
     }
 }
