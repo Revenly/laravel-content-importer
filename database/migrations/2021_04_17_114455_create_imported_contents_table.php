@@ -18,6 +18,7 @@ class CreateImportedContentsTable extends Migration
             $table->unsignedBigInteger('file_id');
             $table->json('data');
             $table->timestamp('processed_at')->nullable();
+            $table->timestamp('transformed_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 
