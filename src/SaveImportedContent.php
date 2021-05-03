@@ -134,7 +134,9 @@ class SaveImportedContent implements ImportableModel
 
         $query = $this->model::query()->where(function ($query) use ($items, $uniqueFields) {
             collect($uniqueFields)->each(function ($unique) use ($query, $items) {
-                $query->orWhere($unique, $items[$unique]);
+                $query->orWhere(function ($query) use ($unique, $items) {
+                    $query->whereNotNull($unique)->where($unique, $items[$unique]);
+                });
             });
         });
 
