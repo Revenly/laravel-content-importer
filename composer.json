@@ -55,7 +55,7 @@
                 "R64\\ContentImport\\ContentImportServiceProvider"
             ],
             "aliases": {
-                "ContentImport": "R64\\ContentImport\\ContentImportFacade"
+                "ContentImport": "R64\\ContentImport\\Facades\\ContentImportFacade"
             }
         }
     }

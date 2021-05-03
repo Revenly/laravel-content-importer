@@ -2,6 +2,7 @@
 
 namespace R64\ContentImport;
 
+use Illuminate\Container\Container;
 use R64\ContentImport\Commands\ImportFilesCommand;
 use R64\ContentImport\Commands\ProcessImportedFilesCommand;
 use R64\ContentImport\ContentImport as ImportClass;
@@ -39,7 +40,10 @@ class ContentImportServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        // Automatically apply the package configuration
+        $this->app->singleton(MapImportedContent::class, function() {
+            return new MapImportedContent;
+        });
+
         $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'content-import');
     }
 }

@@ -58,7 +58,7 @@ class MapImportedContentTest extends TestCase
             ]
         ];
 
-        $this->mapImportedContent = (new MapImportedContent($this->data));
+        $this->mapImportedContent = (new MapImportedContent)->init($this->data);
     }
 
     /** @test */
@@ -70,7 +70,7 @@ class MapImportedContentTest extends TestCase
             ]
         ];
 
-        $this->mapImportedContent = (new MapImportedContent($this->data));
+        $this->mapImportedContent = (new MapImportedContent)->init($this->data);
 
         $contents = $this->mapImportedContent->withMappedRow([
             Model::class => [
@@ -102,7 +102,7 @@ class MapImportedContentTest extends TestCase
             ]
         ];
 
-        $this->mapImportedContent = (new MapImportedContent($this->data));
+        $this->mapImportedContent = (new MapImportedContent)->init($this->data);
 
         $contents = $this->mapImportedContent->withMappedRow([
             Model::class => [
@@ -134,7 +134,7 @@ class MapImportedContentTest extends TestCase
     {
         $this->data = [["email" => "JohDOe@email.com"]];
 
-        $this->mapImportedContent = (new MapImportedContent($this->data));
+        $this->mapImportedContent = (new MapImportedContent)->init($this->data);
 
         $result = $this->mapImportedContent
             ->withMappedRow([
@@ -167,7 +167,7 @@ class MapImportedContentTest extends TestCase
                 ]
             ];
 
-            $this->mapImportedContent = (new MapImportedContent($this->data));
+            $this->mapImportedContent = (new MapImportedContent)->init($this->data);
 
              $this->mapImportedContent
                 ->withMappedRow([
