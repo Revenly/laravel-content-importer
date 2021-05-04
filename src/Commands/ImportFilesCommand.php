@@ -57,7 +57,10 @@ class ImportFilesCommand extends Command
      */
     private function saveImportedFile(string $url)
     {
-        $data = ['url' => $url, 'disk' => $this->disk];
-        File::updateOrCreate($data, $data);
+        $file = File::where('url', '=', $url)->where('disk', '=', $this->disk)->first();
+
+        if (is_null($file)) {
+            File::create(['url' => $url, 'disk' => $this->disk]);
+        }
     }
 }
