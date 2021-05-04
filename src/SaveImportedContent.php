@@ -89,7 +89,9 @@ class SaveImportedContent implements ImportableModel
             $items = $this->handleItemsBeforeUpdate($existedModel, $items);
 
             return tap($existedModel, function ($model) use ($items) {
-                $model->forceFill($items)->savingFromImport();
+                $model = $this->optimisticUpdate($model, $items);
+
+                $model->savingFromImport();
             });
         }
 
@@ -164,5 +166,24 @@ class SaveImportedContent implements ImportableModel
     protected function isRelationAttribute($attribute): bool
     {
         return Str::startsWith($attribute, '@');
+    }
+
+    /**
+     * @param       $model
+     * @param array $items
+     *
+     * @return mixed
+     */
+    protected function optimisticUpdate($model, array $items)
+    {
+        do {
+            $model = $model->fresh();
+            $updated = $model::query()->whereId($model->id)
+                ->where('updated_at', '=', $model->updated_at)
+                ->update($items);
+
+        } while (!$updated);
+
+        return $model;
     }
 }
