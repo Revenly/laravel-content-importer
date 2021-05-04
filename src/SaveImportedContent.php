@@ -89,7 +89,8 @@ class SaveImportedContent implements ImportableModel
             $items = $this->handleItemsBeforeUpdate($existedModel, $items);
 
             return tap($existedModel, function ($model) use ($items) {
-                $model = $this->optimisticUpdate($model, $items);
+                $model->forceFill($items);
+//                $model = $this->optimisticUpdate($model, $items);
 
                 $model->savingFromImport();
             });
