@@ -149,7 +149,7 @@ class SaveImportedContent implements ImportableModel
             if ($and) {
                 collect($and)->each(function ($attribute) use ($query, $items) {
                     $query->where(function ($query) use ($attribute, $items) {
-                        $query->whereNotNull($attribute)->where($attribute, $items[$attribute]);
+                        $query->where($attribute, $items[$attribute]);
                     });
                 });
             }
