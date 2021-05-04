@@ -96,7 +96,6 @@ class SaveImportedContent implements ImportableModel
 
             return tap($existedModel, function ($model) use ($items) {
                 $model->forceFill($items);
-                // $model = $this->optimisticUpdate($model, $items);
 
                 $model->savingFromImport();
             });
