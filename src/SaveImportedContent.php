@@ -61,25 +61,31 @@ class SaveImportedContent implements ImportableModel
 
         $modelItems = $this->handleDependencies($modelItems);
 
-        $model = $this->saveModel($modelItems);
+        $this->model = $this->saveModel($this->model, $modelItems);
 
-        $this->handleModelRelationships($model, $relationships);
+        $this->handleModelRelationships($relationships);
 
-        return $model;
+        return $this->model;
     }
 
-    protected function handleModelRelationships(Model $model, Collection $relationships)
+    protected function handleModelRelationships(Collection $relationships)
     {
-        $relationships->each(function ($items, $relation) use ($model) {
+        $relationships->each(function ($items, $relation) {
             $relation = str_replace('@', '', $relation);
 
-            $model->{$relation}()->create($items);
+            $foreignKey = $this->model->{$relation}()->getQualifiedForeignKeyName();
+
+            $relatedModel = $this->model->{$relation}()->getRelated();
+
+            $items[$foreignKey] = $this->model->getKey();
+
+            $this->saveModel($relatedModel, $items);
         });
     }
 
-    protected function saveModel(array $items): Model
+    protected function saveModel(Model $model, array $items): Model
     {
-        $existedModel = $this->getModelIfExists(...func_get_args());
+        $existedModel = $this->getModelIfExists($model, $items);
 
         if ($existedModel && !$this->shouldUpdateModel($existedModel)) {
             return $existedModel;
@@ -90,13 +96,13 @@ class SaveImportedContent implements ImportableModel
 
             return tap($existedModel, function ($model) use ($items) {
                 $model->forceFill($items);
-//                $model = $this->optimisticUpdate($model, $items);
+                // $model = $this->optimisticUpdate($model, $items);
 
                 $model->savingFromImport();
             });
         }
 
-        return tap($this->model, function ($model) use ($items) {
+        return tap($model, function ($model) use ($items) {
             $model->forceFill(array_merge($items));
 
             $model->savingFromImport();
@@ -127,20 +133,37 @@ class SaveImportedContent implements ImportableModel
         })->toArray();
     }
 
-    protected function getModelIfExists(array $items): ?Model
+    protected function getModelIfExists(Model $model, array $items): ?Model
     {
-        $uniqueFields = array_key_exists(get_class($this->model), $this->uniqueFields) ? $this->uniqueFields[get_class($this->model)] : [];
+        $uniqueFields = array_key_exists(get_class($model), $this->uniqueFields) ? $this->uniqueFields[get_class($model)] : [];
 
         if (!$uniqueFields) {
             return null;
         }
 
-        $query = $this->model::query()->where(function ($query) use ($items, $uniqueFields) {
-            collect($uniqueFields)->each(function ($unique) use ($query, $items) {
-                $query->orWhere(function ($query) use ($unique, $items) {
-                    $query->whereNotNull($unique)->where($unique, $items[$unique]);
+        $query = $model::query()->where(function ($query) use ($items, $uniqueFields) {
+
+            $and = Arr::get($uniqueFields, 'and', []);
+
+            $or = Arr::get($uniqueFields, 'or', []);
+
+            if ($and) {
+                collect($and)->each(function ($attribute) use ($query, $items) {
+                    $query->where(function ($query) use ($attribute, $items) {
+                        $query->whereNotNull($attribute)->where($attribute, $items[$attribute]);
+                    });
                 });
-            });
+            }
+
+            if ($or) {
+                $query->orWhere(function ($query) use ($or, $items) {
+                    collect($or)->each(function ($attribute) use ($query, $items) {
+                        $query->orWhere(function ($query) use ($attribute, $items) {
+                            $query->whereNotNull($attribute)->where($attribute, $items[$attribute]);
+                        });
+                    });
+                });
+            }
         });
 
         return $query->first();
@@ -175,14 +198,15 @@ class SaveImportedContent implements ImportableModel
      *
      * @return mixed
      */
-    protected function optimisticUpdate($model, array $items)
+    protected function optimisticUpdate(Model $model, array $items): Model
     {
+        $updated = false;
+
         do {
             $model = $model->fresh();
             $updated = $model::query()->whereId($model->id)
                 ->where('updated_at', '=', $model->updated_at)
                 ->update($items);
-
         } while (!$updated);
 
         return $model;
