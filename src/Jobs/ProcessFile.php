@@ -38,7 +38,6 @@ class ProcessFile implements ShouldQueue
         $stream = fopen(Storage::disk('local')->path($this->file->url), 'r');
         $csv = Reader::createFromStream($stream);
 
-
         if (config('content_import.heading_row', true)) {
             $csv->setHeaderOffset(0);
         }

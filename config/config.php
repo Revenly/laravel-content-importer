@@ -4,9 +4,9 @@
  * You can place your custom package configuration in here.
  */
 return [
-    "directory" =>'imports',
+    'directory' => 'imports',
 
-    "chunck_size" => 1000,
+    'chunck_size' => 1000,
 
-    "heading_row" => true
+    'heading_row' => true
 ];
