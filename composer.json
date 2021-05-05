@@ -22,10 +22,10 @@
     ],
     "require": {
         "php": "^7.4",
-        "illuminate/support": "^8.0",
         "illuminate/database": "^8.0",
-        "league/flysystem-aws-s3-v3": "~1.0",
-        "maatwebsite/excel": "^3.1"
+        "illuminate/support": "^8.0",
+        "league/csv": "^9.7",
+        "league/flysystem-aws-s3-v3": "~1.0"
     },
     "require-dev": {
         "orchestra/testbench": "^6.0",
