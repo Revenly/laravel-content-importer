@@ -6,7 +6,7 @@
 return [
     "directory" =>'imports',
 
-    "chunck_size" => 1000,
+    "chunck_size" => 10003,
 
-    "heading_row" => 1
+    "heading_row" => true
 ];
