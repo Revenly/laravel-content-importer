@@ -27,7 +27,7 @@ class ProcessFile implements ShouldQueue
         if (!Storage::disk('local')->exists($this->file->url)) {
             Storage::disk('local')->put(
                 $this->file->url,
-                file_get_contents(Storage::disk($this->file->disk)->url($this->file->url))
+                Storage::disk($this->file->disk)->get($this->file->url)
             );
         }
 
