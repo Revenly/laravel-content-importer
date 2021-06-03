@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use R64\ContentImport\Events\ValidationFailed;
 use R64\ContentImport\Exceptions\ValidationFailedException;
 use R64\ContentImport\Pipelines\Pipeline;
 use R64\ContentImport\Pipelines\PipelineContract;
@@ -34,11 +33,17 @@ class MapImportedContent
 
     protected $canUpdateCallback = null;
 
+    protected $customAttributesToUpdateCallback = null;
+
+    protected $canCreateOrUpdateCallback = null;
+
     protected $mappedRows = [];
 
     protected $validators;
 
     protected $dirtyRows = [];
+
+    protected $additionalRows = [];
 
     public function __construct(ImportableModel $importableModel = null)
     {
@@ -57,6 +62,13 @@ class MapImportedContent
     public function withMappedRow(array $rowsToMap): self
     {
         $this->rowsToMap = collect($rowsToMap);
+
+        return $this;
+    }
+
+    public function withAdditionalRows(array $additionalRows): self
+    {
+        $this->additionalRows = $additionalRows;
 
         return $this;
     }
@@ -89,6 +101,20 @@ class MapImportedContent
         return $this;
     }
 
+    public function customAttributesToUpdate(Closure $customAttributesToUpdateCallback = null)
+    {
+        $this->customAttributesToUpdateCallback = $customAttributesToUpdateCallback;
+
+        return $this;
+    }
+
+    public function canCreateOrUpdate(Closure $canCreateOrUpdateCallback = null)
+    {
+        $this->canCreateOrUpdateCallback = $canCreateOrUpdateCallback;
+
+        return $this;
+    }
+
     public function withBeforeUpdate(Closure $beforeUpdate = null)
     {
         $this->beforeUpdate = $beforeUpdate;
@@ -99,9 +125,10 @@ class MapImportedContent
     public function map(): self
     {
         $this->mappedRows = $this->content->map(function ($row) {
+            $row = array_merge($row, $this->additionalRows);
             return [
                 'row' => $row,
-                'data' => $this->mapRow($row)
+                'data' => $this->mapRow($row),
             ];
         })->toArray();
 
@@ -146,6 +173,8 @@ class MapImportedContent
         return $this->importableModel
             ->withModel(new $model)
             ->canUpdate($this->canUpdateCallback)
+            ->canCreateOrUpdate($this->canCreateOrUpdateCallback)
+            ->customAttributesToUpdate($this->customAttributesToUpdateCallback)
             ->withBeforeUpdate($this->beforeUpdate)
             ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
     }
@@ -156,6 +185,11 @@ class MapImportedContent
 
         return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
             if ($this->isRelationAttribute($attribute)) {
+
+                if (is_array($column) && !is_string(Arr::first($column))) {
+                    return collect($column)->map(fn($cols) => $this->mapModelAttributes($cols, $row, $model));
+                }
+
                 return $this->mapModelAttributes($column, $row, $model);
             }
 
@@ -177,7 +211,7 @@ class MapImportedContent
             $this->dirtyRows[] = [
                 'row' => $row,
                 'data' => $toMap,
-                'failed_reason' => $e->getMessage()
+                'failed_reason' => $e->getMessage(),
             ];
         }
     }
@@ -185,7 +219,7 @@ class MapImportedContent
     protected function removeUnwantedElementFromItems(array $items): array
     {
         $notNeeded = [
-            'depends_on'
+            'depends_on',
         ];
 
         return collect($items)->forget($notNeeded)->toArray();
