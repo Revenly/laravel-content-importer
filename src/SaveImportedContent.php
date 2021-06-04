@@ -22,6 +22,10 @@ class SaveImportedContent implements ImportableModel
 
     protected $canUpdateCallback = null;
 
+    protected $customAttributesToUpdateCallback = null;
+
+    protected $canCreateOrUpdateCallback = null;
+
     public function withModel(Model $model): self
     {
         $this->model = $model;
@@ -39,6 +43,20 @@ class SaveImportedContent implements ImportableModel
     public function canUpdate(Closure $canUpdateCallback = null)
     {
         $this->canUpdateCallback = $canUpdateCallback;
+
+        return $this;
+    }
+
+    public function customAttributesToUpdate(Closure $customAttributesToUpdateCallback = null)
+    {
+        $this->customAttributesToUpdateCallback = $customAttributesToUpdateCallback;
+
+        return $this;
+    }
+
+    public function canCreateOrUpdate(Closure $canCreateOrUpdateCallback = null)
+    {
+        $this->canCreateOrUpdateCallback = $canCreateOrUpdateCallback;
 
         return $this;
     }
@@ -73,9 +91,27 @@ class SaveImportedContent implements ImportableModel
         $relationships->each(function ($items, $relation) {
             $relation = str_replace('@', '', $relation);
 
-            $foreignKey = $this->model->{$relation}()->getQualifiedForeignKeyName();
+            $relationType = (new \ReflectionClass($this->model->{$relation}()))->getShortName();
 
             $relatedModel = $this->model->{$relation}()->getRelated();
+
+            if ($relationType === 'BelongsToMany') {
+                $modelIds = [];
+
+                foreach ($items as $item) {
+                    if (is_array($item)) {
+                        $relationShipModel = get_class($relatedModel);
+
+                        $modelIds[] = $this->saveModel(new $relationShipModel, $item)->getKey();
+                    }
+                }
+
+                $this->model->{$relation}()->sync(array_filter($modelIds));
+
+                return;
+            }
+
+            $foreignKey = $this->model->{$relation}()->getQualifiedForeignKeyName();
 
             $items[$foreignKey] = $this->model->getKey();
 
@@ -97,6 +133,10 @@ class SaveImportedContent implements ImportableModel
             return tap($existedModel, function ($model) use ($items) {
                 $model->forceFill($items);
 
+                if (!$this->canBeSaved($model)) {
+                    return;
+                }
+
                 $model->savingFromImport();
             });
         }
@@ -104,8 +144,27 @@ class SaveImportedContent implements ImportableModel
         return tap($model, function ($model) use ($items) {
             $model->forceFill(array_merge($items));
 
+            if (!$this->canBeSaved($model)) {
+                return;
+            }
+
             $model->savingFromImport();
         });
+    }
+
+    protected function canBeSaved(Model $model)
+    {
+        $canCreateOrUpdateCallback = $this->canCreateOrUpdateCallback;
+
+        if (!$canCreateOrUpdateCallback) {
+            return true;
+        }
+
+        if ($canCreateOrUpdateCallback($model)) {
+            return true;
+        }
+
+        return false;
     }
 
     protected function shouldUpdateModel(Model $model): bool
@@ -121,6 +180,8 @@ class SaveImportedContent implements ImportableModel
 
     protected function handleItemsBeforeUpdate(Model $existedModel, array $items): array
     {
+        $items = $this->getCustomAttributesToUpdate($existedModel, $items);
+
         if (!$this->beforeUpdate) {
             return $items;
         }
@@ -129,6 +190,25 @@ class SaveImportedContent implements ImportableModel
 
         return collect($items)->filter(function ($value, $attribute) use ($existedModel, $callback) {
             return !$callback($existedModel, $attribute);
+        })->toArray();
+    }
+
+    protected function getCustomAttributesToUpdate(Model $model, array $items): array
+    {
+        if (!$this->customAttributesToUpdateCallback) {
+            return $items;
+        }
+
+        $callback = $this->customAttributesToUpdateCallback;
+
+        $customAttributesToUpdate = $callback($model);
+
+        if (!$customAttributesToUpdate) {
+            return [];
+        }
+
+        return collect($items)->filter(function ($value, $attribute) use ($customAttributesToUpdate) {
+            return in_array($attribute, $customAttributesToUpdate);
         })->toArray();
     }
 
@@ -167,7 +247,6 @@ class SaveImportedContent implements ImportableModel
 
         return $query->first();
     }
-
 
     protected function handleDependencies(array $items): array
     {
