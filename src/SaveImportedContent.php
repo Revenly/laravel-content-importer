@@ -111,7 +111,7 @@ class SaveImportedContent implements ImportableModel
                 return;
             }
 
-            $foreignKey = $this->model->{$relation}()->getQualifiedForeignKeyName();
+            $foreignKey = $this->model->{$relation}()->getForeignKeyName();
 
             $items[$foreignKey] = $this->model->getKey();
 
