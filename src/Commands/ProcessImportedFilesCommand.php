@@ -38,6 +38,8 @@ class ProcessImportedFilesCommand extends Command
      */
     public function handle()
     {
-        File::unprocessed()->each(fn($file) => ProcessFile::dispatch($file));
+        File::unprocessed()
+            ->onlyExtensions(config('content_import.extensions'))
+            ->each(fn($file) => ProcessFile::dispatch($file));
     }
 }
