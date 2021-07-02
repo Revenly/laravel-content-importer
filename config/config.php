@@ -8,5 +8,7 @@ return [
 
     'chunck_size' => 1000,
 
-    'heading_row' => true
+    'heading_row' => true,
+    
+    'extensions' => ['.csv']
 ];
