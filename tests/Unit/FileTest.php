@@ -32,5 +32,14 @@ class FileTest extends TestCase
         $this->assertCount(2, File::onlyExtensions(['.csv', '.xls'])->get());
         $this->assertCount(3, File::onlyExtensions(['.csv', '.xls', '.zip'])->get());
         $this->assertCount(3, File::onlyExtensions([])->get());
+
+        File::create([
+            'url' => 'some_file.xls',
+            'disk' => 's3',
+            'processed_at' => now()
+        ]);
+
+        $this->assertCount(1, File::unprocessed()->onlyExtensions(['.xls'])->get());
+
     }
 }

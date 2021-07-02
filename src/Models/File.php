@@ -18,11 +18,13 @@ class File extends Model
 
     public function scopeOnlyExtensions($query, $extensions = [])
     {
-        foreach ($extensions as $extension) {
-            $query = $query->orWhere('url', 'like', '%' . $extension);
-        }
+        return $query->where(function ($query) use ($extensions) {
+            foreach ($extensions as $extension) {
+                $query = $query->orWhere('url', 'like', '%' . $extension);
+            }
 
-        return $query;
+            return $query;
+        });
     }
 
     public function markAsProcessed()
