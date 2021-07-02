@@ -16,6 +16,15 @@ class File extends Model
         return $query->whereNull('processed_at');
     }
 
+    public function scopeOnlyExtensions($query, $extensions = [])
+    {
+        foreach ($extensions as $extension) {
+            $query = $query->orWhere('url', 'like', '%' . $extension);
+        }
+
+        return $query;
+    }
+
     public function markAsProcessed()
     {
         return $this->update(['processed_at' => now()]);
