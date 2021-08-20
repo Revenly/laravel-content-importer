@@ -2,6 +2,7 @@
 
 namespace R64\ContentImport;
 
+use App\Models\Customer;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -133,6 +134,9 @@ class SaveImportedContent implements ImportableModel
             return tap($existedModel, function ($model) use ($items) {
                 $model->forceFill($items);
 
+                if ($model instanceof  Customer) {
+                    dump($model->toArray());
+                }
                 if (!$this->canBeSaved($model)) {
                     return;
                 }

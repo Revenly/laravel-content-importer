@@ -36,4 +36,9 @@ class File extends Model
     {
         return $this->hasMany(ImportedContent::class);
     }
+
+    public function extension(): string
+    {
+        return collect(explode('.', $this->url))->last();
+    }
 }

@@ -10,12 +10,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use R64\ContentImport\Models\ImportedContent;
+use R64\ContentImport\Processors\CsvProcessor;
+use R64\ContentImport\Processors\TxtProcessor;
 
 class ProcessFile implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public File $file;
+
 
     public function __construct(File $file)
     {
@@ -31,14 +34,18 @@ class ProcessFile implements ShouldQueue
             );
         }
 
-        $stream = fopen(Storage::disk('local')->path($this->file->url), 'r');
-        $csv = Reader::createFromStream($stream);
 
-        if (config('content_import.heading_row', true)) {
-            $csv->setHeaderOffset(0);
+        $processor = null;
+
+        if ($this->file->extension() === 'csv' || $this->file->extension() === 'xlsx') {
+            $processor = new CsvProcessor();
         }
 
-        collect($csv->getRecords())
+        if ($this->file->extension() === 'txt') {
+            $processor = new TxtProcessor();
+        }
+
+        collect($processor->read($this->file->url))
             ->chunk(config('content_import.chunk_size', 1000))
             ->each(function ($chunk) {
                 $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
