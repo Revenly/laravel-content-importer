@@ -45,7 +45,7 @@ class ProcessFile implements ShouldQueue
 
         $processor = app()->make($processingClass);
 
-        collect($processor->read($this->file->url, $this->delimeter))
+        collect($processor->read(Storage::disk('local')->get($this->file->url), $this->delimeter))
             ->chunk(config('content_import.chunk_size', 1000))
             ->each(function ($chunk) {
                 $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
