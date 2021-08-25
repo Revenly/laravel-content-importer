@@ -10,6 +10,8 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use R64\ContentImport\Models\ImportedContent;
+use R64\ContentImport\Processors\CsvProcessor;
+use R64\ContentImport\Processors\TxtProcessor;
 
 class ProcessFile implements ShouldQueue
 {
@@ -17,9 +19,13 @@ class ProcessFile implements ShouldQueue
 
     public File $file;
 
-    public function __construct(File $file)
+    public string $delimeter;
+
+    public function __construct(File $file, string $delimeter=null)
     {
         $this->file = $file;
+
+        $this->delimeter = $delimeter;
     }
 
     public function handle()
@@ -31,14 +37,15 @@ class ProcessFile implements ShouldQueue
             );
         }
 
-        $stream = fopen(Storage::disk('local')->path($this->file->url), 'r');
-        $csv = Reader::createFromStream($stream);
-
-        if (config('content_import.heading_row', true)) {
-            $csv->setHeaderOffset(0);
+        if ($this->file->extension() === 'txt' && is_null($this->delimeter)) {
+            throw new \Exception("txt-delimeter option is requred when dealing with txt files");
         }
 
-        collect($csv->getRecords())
+        $processingClass = config(sprintf('content_import.%s', $this->file->extension()));
+
+        $processor = app()->make($processingClass);
+
+        collect($processor->read(Storage::disk('local')->get($this->file->url), $this->delimeter))
             ->chunk(config('content_import.chunk_size', 1000))
             ->each(function ($chunk) {
                 $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());

@@ -144,6 +144,7 @@ class MapImportedContent
         }
 
         collect($storeRows)->pluck('data')->map(function ($rowData) {
+
             $this->models = [];
             $this->dependencies = [];
 

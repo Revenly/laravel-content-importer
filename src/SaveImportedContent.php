@@ -110,7 +110,10 @@ class SaveImportedContent implements ImportableModel
 
                 return;
             }
-
+            if ($relationType === 'MorphMany') {
+                $this->model->{$relation}()->createMany($items);
+                return;
+            }
             $foreignKey = $this->model->{$relation}()->getForeignKeyName();
 
             $items[$foreignKey] = $this->model->getKey();

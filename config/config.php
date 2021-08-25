@@ -9,6 +9,12 @@ return [
     'chunck_size' => 1000,
 
     'heading_row' => true,
-    
-    'extensions' => ['.csv']
+
+    'extensions' => ['.csv'],
+
+    'csv' => \R64\ContentImport\Processors\CsvProcessor::class,
+
+    'xlsx' => \R64\ContentImport\Processors\CsvProcessor::class,
+
+    'txt' => \R64\ContentImport\Processors\TxtProcessor::class
 ];
