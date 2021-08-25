@@ -12,7 +12,7 @@ class ProcessImportedFilesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'files:process';
+    protected $signature = 'files:process {--D|txt-delimeter=}';
 
     /**
      * The console command description.
@@ -38,8 +38,10 @@ class ProcessImportedFilesCommand extends Command
      */
     public function handle()
     {
+        $delimeter = $this->option('txt-delimeter');
+
         File::unprocessed()
             ->onlyExtensions(config('content_import.extensions'))
-            ->each(fn($file) => ProcessFile::dispatch($file));
+            ->each(fn($file) => ProcessFile::dispatch($file, $delimeter));
     }
 }

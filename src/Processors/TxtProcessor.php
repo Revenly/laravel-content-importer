@@ -8,7 +8,7 @@ use SplFileObject;
 class TxtProcessor implements FileProcessorContract
 {
 
-    public function read(string $path)
+    public function read(string $path, string $delimeter = null)
     {
         $file = new SplFileObject( Storage::disk('local')->path($path), 'r');
 
@@ -21,12 +21,12 @@ class TxtProcessor implements FileProcessorContract
 
                 $headers = array_map(function ($header) {
                     return str_replace(' ', '', $header);
-                },  $this->getRow($file->current(), '|'));
+                },  $this->getRow($file->current(), $delimeter));
 
                 $file->next();
             }
 
-            $row = $this->getRow($file->current(), '|');
+            $row = $this->getRow($file->current(), $delimeter);
 
             if (count($row) === count($headers)) {
                 $contents->push(array_combine($headers, $row));
@@ -38,7 +38,7 @@ class TxtProcessor implements FileProcessorContract
         return $contents->all();
     }
 
-    private function getRow(string $row, string $delimiter)
+    private function getRow(string $row, string $delimiter )
     {
         return explode($delimiter, trim($row));
     }

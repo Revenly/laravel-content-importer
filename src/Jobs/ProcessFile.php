@@ -19,10 +19,13 @@ class ProcessFile implements ShouldQueue
 
     public File $file;
 
+    public string $delimeter;
 
-    public function __construct(File $file)
+    public function __construct(File $file, string $delimeter=null)
     {
         $this->file = $file;
+
+        $this->delimeter = $delimeter;
     }
 
     public function handle()
@@ -34,18 +37,15 @@ class ProcessFile implements ShouldQueue
             );
         }
 
-
-        $processor = null;
-
-        if ($this->file->extension() === 'csv' || $this->file->extension() === 'xlsx') {
-            $processor = new CsvProcessor();
+        if ($this->file->extension() === 'txt' && is_null($this->delimeter)) {
+            throw new \Exception("txt-delimeter option is requred when dealing with txt files");
         }
 
-        if ($this->file->extension() === 'txt') {
-            $processor = new TxtProcessor();
-        }
+        $processingClass = config(sprintf('content_import.%s', $this->file->extension()));
 
-        collect($processor->read($this->file->url))
+        $processor = app()->make($processingClass);
+
+        collect($processor->read($this->file->url, $this->delimeter))
             ->chunk(config('content_import.chunk_size', 1000))
             ->each(function ($chunk) {
                 $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
