@@ -3,6 +3,7 @@ namespace R64\ContentImport\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use R64\ContentImport\Models\File;
 
 class ImportFilesCommand extends Command
@@ -12,7 +13,7 @@ class ImportFilesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'files:import';
+    protected $signature = 'files:import {--F|folder=}';
 
     /**
      * The console command description.
@@ -45,11 +46,16 @@ class ImportFilesCommand extends Command
     {
         $fileSystem = Storage::disk($this->disk);
 
-        collect($fileSystem->allDirectories(config('content_import.directory')))
+        $folder = $this->option('folder');
+
+        if ($folder && Str::contains($folder, '/')) {
+            collect($fileSystem->allFiles($folder))->each(fn($file) => $this->saveImportedFile($file));
+            return ;
+        }
+
+        collect($fileSystem->allDirectories($folder ?? config('content_import.directory')))
             ->lazy()
-            ->each(fn($path) =>
-            collect($fileSystem->allFiles($path))->each(fn($file) => $this->saveImportedFile($file))
-            );
+            ->each(fn($path) => collect($fileSystem->allFiles($path))->each(fn($file) => $this->saveImportedFile($file)));
     }
 
     /**
