@@ -10,10 +10,10 @@ use R64\ContentImport\Tests\TestCase;
 
 class TxtProcessorTest extends TestCase
 {
+
     /** @test */
     public function it_can_process_txt_files()
     {
-        Storage::fake('local');
         Storage::disk('local')->putFileAs('imports/1/', new File('tests/files/test_import.txt'), 'test_import.txt');
 
         $rows = (new TxtProcessor())->read('imports/1/test_import.txt', '|');
@@ -50,12 +50,13 @@ class TxtProcessorTest extends TestCase
                 "Phase" => "50"
             ]
         );
+
+        Storage::disk('local')->delete('imports/1/test_import.txt');
     }
 
     /** @test */
     public function it_can_process_txt_files_with_different_delimeters()
     {
-        Storage::fake('local');
         Storage::disk('local')->putFileAs('imports/1/', new File('tests/files/test_import_2.txt'), 'test_import_2.txt');
 
         $rows = (new TxtProcessor())->read('imports/1/test_import_2.txt', '>');
@@ -92,6 +93,8 @@ class TxtProcessorTest extends TestCase
                 "Phase" => "50"
             ]
         );
+
+        Storage::disk('local')->delete('imports/1/test_import_2.txt');
     }
 
 
