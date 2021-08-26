@@ -10,7 +10,7 @@ class TxtProcessor implements FileProcessorContract
 
     public function read(string $path, string $delimeter = null)
     {
-        $file = new SplFileObject( Storage::disk('local')->path($path), 'r');
+        $file = new SplFileObject(Storage::disk('local')->path($path), 'r');
 
         $headers = null;
 
