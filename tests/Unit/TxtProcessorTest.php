@@ -96,6 +96,4 @@ class TxtProcessorTest extends TestCase
 
         Storage::disk('local')->delete('imports/1/test_import_2.txt');
     }
-
-
 }
