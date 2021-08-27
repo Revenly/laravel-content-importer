@@ -7,7 +7,7 @@ use League\Csv\Reader;
 
 class CsvProcessor implements FileProcessorContract
 {
-    public function read(string $path, string $delimeter = null)
+    public function read(string $path, ?string $delimeter)
     {
         $stream = fopen(Storage::disk('local')->path($path), 'r');
         $csv = Reader::createFromStream($stream);
