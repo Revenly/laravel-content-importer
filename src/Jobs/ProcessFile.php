@@ -40,12 +40,9 @@ class ProcessFile implements ShouldQueue
         if ($this->file->extension() === 'txt' && is_null($this->delimeter)) {
             throw new \Exception("txt-delimeter option is requred when dealing with txt files");
         }
-        logger()->debug(config('content_import'));
 
         $processingClass = config(sprintf('content_import.%s', $this->file->extension()));
-        logger()->debug("file: " . $this->file->url);
-        logger()->debug("delimiter: " . $this->delimeter);
-        logger()->debug("processing class: " . $processingClass);
+
         $processor = app()->make($processingClass);
 
         collect($processor->read($this->file->url, $this->delimeter))
