@@ -42,6 +42,8 @@ class ProcessFile implements ShouldQueue
         }
 
         $processingClass = config(sprintf('content_import.%s', $this->file->extension()));
+        logger()->debug("file: " . $this->file->url);
+        logger()->debug("delimiter: " . $this->delimeter);
         logger()->debug("processing class: " . $processingClass);
         $processor = app()->make($processingClass);
 
