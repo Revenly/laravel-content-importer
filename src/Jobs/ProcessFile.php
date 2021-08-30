@@ -4,14 +4,12 @@ namespace R64\ContentImport\Jobs;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
-use League\Csv\Reader;
+use League\Csv\MapIterator;
 use R64\ContentImport\Models\File;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use R64\ContentImport\Models\ImportedContent;
-use R64\ContentImport\Processors\CsvProcessor;
-use R64\ContentImport\Processors\TxtProcessor;
 
 class ProcessFile implements ShouldQueue
 {
@@ -38,23 +36,43 @@ class ProcessFile implements ShouldQueue
         }
 
         if ($this->file->extension() === 'txt' && is_null($this->delimeter)) {
-            throw new \Exception("txt-delimeter option is requred when dealing with txt files");
+            throw new \Exception("delimeter option is required when dealing with txt files");
         }
 
         $processingClass = config(sprintf('content_import.%s', $this->file->extension()));
 
         $processor = app()->make($processingClass);
 
-        collect($processor->read($this->file->url, $this->delimeter))
-            ->chunk(config('content_import.chunk_size', 1000))
-            ->each(function ($chunk) {
-                $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
-                ImportedContent::create([
-                    'file_id' => $this->file->id,
-                    'data' => array_values($records)
-                ]);
-            });
+
+        $output = $processor->read($this->file->url, $this->delimeter);
+
+
+        if (get_class($output) === \Generator::class) {
+            $this->processGeneratorOutput($output);
+        } else {
+            $this->processCollectionOutput($output);
+        }
 
         $this->file->markAsProcessed();
+    }
+
+    private function processGeneratorOutput(\Generator $output)
+    {
+        foreach ($output as $item) {
+            $this->processCollectionOutput($item);
+        }
+    }
+
+    private function processCollectionOutput($collection)
+    {
+            collect($collection)
+                ->chunk(100)
+                ->each(function ($chunk) {
+                    $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
+                    ImportedContent::create([
+                        'file_id' => $this->file->id,
+                        'data' => array_values($records)
+                    ]);
+                });
     }
 }
