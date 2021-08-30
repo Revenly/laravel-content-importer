@@ -14,8 +14,7 @@ class TxtProcessor implements FileProcessorContract
 
         $headers = null;
 
-        $contents = collect([]);
-
+        $content = collect([]);
         while (!$file->eof()) {
             if ($file->key() === 0) {
 
@@ -29,13 +28,19 @@ class TxtProcessor implements FileProcessorContract
             $row = $this->getRow($file->current(), $delimeter);
 
             if (count($row) === count($headers)) {
-                $contents->push(array_combine($headers, $row));
+
+                $content->push(array_combine($headers, $row));
+
+                if ($file->key() % 100 === 0 ) {
+
+                     yield $content;
+
+                     $content = collect([]);
+                }
             }
 
             $file->next();
         }
-
-        return $contents->all();
     }
 
     private function getRow(string $row, string $delimiter )
