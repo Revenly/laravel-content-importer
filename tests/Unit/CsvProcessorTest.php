@@ -15,7 +15,7 @@ class CsvProcessorTest extends TestCase
         Storage::fake('local');
         Storage::disk('local')->putFileAs('imports/1/', new File('tests/files/test_import.csv'), 'test_import.csv');
 
-        $rows = ( new CsvProcessor())->read('imports/1/test_import.csv');
+        $rows = ( new CsvProcessor())->read('imports/1/test_import.csv', null);
 
         $this->assertInstanceOf("League\Csv\MapIterator", $rows);
     }
