@@ -73,7 +73,6 @@ class ProcessFile implements ShouldQueue
                         'file_id' => $this->file->id,
                         'data' => mb_convert_encoding(array_values($records), 'UTF-8', 'UTF-8')
                     ]);
-                    dd();
                 });
     }
 }
