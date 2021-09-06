@@ -66,14 +66,15 @@ class ProcessFile implements ShouldQueue
     private function processCollectionOutput($collection)
     {
             collect($collection)
-                ->chunk(100)
+                ->chunk(1)
                 ->each(function ($chunk) {
                     $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
-                    //logger()->debug(array_values($records));
+                    logger()->debug(array_values($records));
                     ImportedContent::create([
                         'file_id' => $this->file->id,
                         'data' => array_values($records)
                     ]);
+                    dd();
                 });
     }
 }
