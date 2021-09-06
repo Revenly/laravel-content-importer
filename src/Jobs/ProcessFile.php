@@ -69,10 +69,9 @@ class ProcessFile implements ShouldQueue
                 ->chunk(1)
                 ->each(function ($chunk) {
                     $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
-                    logger()->debug(array_values($records));
                     ImportedContent::create([
                         'file_id' => $this->file->id,
-                        'data' => array_values($records)
+                        'data' => mb_convert_encoding(array_values($records), 'UTF-8', 'UTF-8')
                     ]);
                     dd();
                 });
