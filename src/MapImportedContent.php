@@ -37,6 +37,8 @@ class MapImportedContent
 
     protected $canCreateOrUpdateCallback = null;
 
+    protected $shouldSkipRow = null;
+
     protected $mappedRows = [];
 
     protected $validators;
@@ -69,6 +71,13 @@ class MapImportedContent
     public function withAdditionalRows(array $additionalRows): self
     {
         $this->additionalRows = $additionalRows;
+
+        return $this;
+    }
+
+    public function shouldSkipRow(Closure $shouldSkipRow): self
+    {
+        $this->shouldSkipRow = $shouldSkipRow;
 
         return $this;
     }
@@ -130,6 +139,8 @@ class MapImportedContent
                 'row' => $row,
                 'data' => $this->mapRow($row),
             ];
+        })->reject(function ($data) {
+            return $this->shouldSkipRow && !call_user_func($this->shouldSkipRow, $data['row']);
         })->toArray();
 
         return $this;
