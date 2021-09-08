@@ -140,7 +140,7 @@ class MapImportedContent
                 'data' => $this->mapRow($row),
             ];
         })->reject(function ($data) {
-            return $this->shouldSkipRow && !call_user_func($this->shouldSkipRow, $data['row']);
+            return $this->shouldSkipRow && call_user_func($this->shouldSkipRow, $data['row']);
         })->toArray();
 
         return $this;
