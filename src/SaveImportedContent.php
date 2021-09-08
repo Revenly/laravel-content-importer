@@ -88,38 +88,42 @@ class SaveImportedContent implements ImportableModel
 
     protected function handleModelRelationships(Collection $relationships)
     {
-        $relationships->each(function ($items, $relation) {
-            $relation = str_replace('@', '', $relation);
+        try {
 
-            $relationType = (new \ReflectionClass($this->model->{$relation}()))->getShortName();
 
-            $relatedModel = $this->model->{$relation}()->getRelated();
+            $relationships->each(function ($items, $relation) {
+                $relation = str_replace('@', '', $relation);
 
-            if ($relationType === 'BelongsToMany') {
-                $modelIds = [];
+                $relationType = (new \ReflectionClass($this->model->{$relation}()))->getShortName();
 
-                foreach ($items as $item) {
-                    if (is_array($item)) {
-                        $relationShipModel = get_class($relatedModel);
+                $relatedModel = $this->model->{$relation}()->getRelated();
 
-                        $modelIds[] = $this->saveModel(new $relationShipModel, $item)->getKey();
+                if ($relationType === 'BelongsToMany') {
+                    $modelIds = [];
+
+                    foreach ($items as $item) {
+                        if (is_array($item)) {
+                            $relationShipModel = get_class($relatedModel);
+
+                            $modelIds[] = $this->saveModel(new $relationShipModel, $item)->getKey();
+                        }
                     }
+
+                    $this->model->{$relation}()->sync(array_filter($modelIds));
+
+                    return;
                 }
+                if ($relationType === 'MorphMany') {
+                    $this->model->{$relation}()->createMany($items);
+                    return;
+                }
+                $foreignKey = $this->model->{$relation}()->getForeignKeyName();
 
-                $this->model->{$relation}()->sync(array_filter($modelIds));
+                $items[$foreignKey] = $this->model->getKey();
 
-                return;
-            }
-            if ($relationType === 'MorphMany') {
-                $this->model->{$relation}()->createMany($items);
-                return;
-            }
-            $foreignKey = $this->model->{$relation}()->getForeignKeyName();
-
-            $items[$foreignKey] = $this->model->getKey();
-
-            $this->saveModel($relatedModel, $items);
-        });
+                $this->saveModel($relatedModel, $items);
+            });
+        } catch (\Exception $exception) {}
     }
 
     protected function saveModel(Model $model, array $items): Model
