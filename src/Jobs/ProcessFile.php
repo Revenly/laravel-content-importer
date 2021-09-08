@@ -55,7 +55,7 @@ class ProcessFile implements ShouldQueue
 
         $this->file->markAsProcessed();
 
-        Storage::disk($this->file->disk)->delete($this->file->url);
+        Storage::disk('local')->delete($this->file->url);
     }
 
     private function processGeneratorOutput(\Generator $output)
