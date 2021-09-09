@@ -52,6 +52,8 @@ class ProcessFile implements ShouldQueue
         }
 
         $this->file->markAsProcessed();
+
+        Storage::disk('local')->delete($this->file->url);
     }
 
     private function processGeneratorOutput(\Generator $output)
@@ -69,7 +71,7 @@ class ProcessFile implements ShouldQueue
                     $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $chunk->toArray());
                     ImportedContent::create([
                         'file_id' => $this->file->id,
-                        'data' => array_values($records)
+                        'data' => mb_convert_encoding(array_values($records), 'UTF-8', 'UTF-8')
                     ]);
                 });
     }
