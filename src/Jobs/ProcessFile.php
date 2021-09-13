@@ -26,6 +26,7 @@ class ProcessFile implements ShouldQueue
 
         $this->delimeter = $delimeter;
 
+
     }
 
     public function handle()
@@ -46,23 +47,13 @@ class ProcessFile implements ShouldQueue
 
         $output = (new FileProcessor())->read($this->file->url, $delimeter);
 
-        if (get_class($output) === \Generator::class) {
-
-            $this->processGeneratorOutput($output);
-        } else {
-            $this->processCollectionOutput($output);
-        }
+        collect($output)
+            ->chunk(100)
+            ->each(fn($chunk) => $this->processCollectionOutput($chunk));
 
         $this->file->markAsProcessed();
 
         Storage::disk('local')->delete($this->file->url);
-    }
-
-    private function processGeneratorOutput(\Generator $output)
-    {
-        foreach ($output as $item) {
-            $this->processCollectionOutput($item);
-        }
     }
 
     private function processCollectionOutput(Collection $collection)

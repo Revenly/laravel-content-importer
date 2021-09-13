@@ -5,6 +5,7 @@ namespace R64\ContentImport\Tests\Unit;
 use Illuminate\Http\File;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
+use League\Csv\MapIterator;
 use R64\ContentImport\Processors\FileProcessor;
 use R64\ContentImport\Tests\TestCase;
 
@@ -17,43 +18,38 @@ class FileProcessorTest extends TestCase
         Storage::disk('local')->putFileAs('imports/1/', new File('tests/files/test_import.txt'), 'test_import.txt');
 
         $rows = (new FileProcessor())->read('imports/1/test_import.txt', '|');
-        $outPut = [];
+        $outPut = collect($rows);
 
-        foreach ($rows as $row) {
-            array_push($outPut, $row->all());
-        }
 
-        $this->assertInstanceOf(\Generator::class, $rows);
+        $this->assertInstanceOf(MapIterator::class, $rows);
 
-        $this->assertCount(2, $outPut[0]);
+        $this->assertCount(2, $outPut);
 
-        $first = Arr::first($outPut[0]);
-
-        $this->assertEquals($first,  [
-                "AccountNumber" => "50451",
-                "RecipientName" => "  UNPOSTED CASH",
-                "Address1" => "SEE COMMENTS FOR",
-                "Address2" => "PAYMENTS NOT POSTED",
-                "City" => "MADISON",
-                "State" => "WI",
-                "Zip" => "",
-                "Balance" => "0.00",
-                "RemoveAccount" => "Y",
-                "Client" => "42341",
-                "ClientName" => "STATE COLLECTION SERVICE",
-                "ConsumerAccount" => "50451-",
-                "ClientModel" => "",
-                "ClientAccountNumber" => "UC",
-                "PatientName" => "  UNPOSTED CASH",
-                "DueDate" => "",
-                "AdmitDate" => "",
-                "DischargeDate" => "",
-                "LastName" => "UNPOSTED CASH",
-                "Element1" => "",
-                "TotalDue" => "0.00",
-                "PaymentTypeCode" => "",
-                "FEE" => "Y",
-                "Phase" => "50"
+        $this->assertEquals($outPut->first(),  [
+              "Account Number" => "50451",
+              "Recipient Name" => "  UNPOSTED CASH",
+              "Address1" => "SEE COMMENTS FOR",
+              "Address2" => "PAYMENTS NOT POSTED",
+              "City" => "MADISON",
+              "State" => "WI",
+              "Zip" => "",
+              "Balance" => "0.00",
+              "Remove Account" => "Y",
+              "Client" => "42341",
+              "Client Name" => "STATE COLLECTION SERVICE",
+              "Consumer Account" => "50451-",
+              "Client Model" => "",
+              "Client Account Number" => "UC",
+              "Patient Name" => "  UNPOSTED CASH",
+              "Due Date" => "",
+              "Admit Date" => "",
+              "Discharge Date" => "",
+              "Last Name" => "UNPOSTED CASH",
+              "Element 1" => "",
+              "Total Due" => "0.00",
+              "Payment Type Code" => "",
+              "FEE" => "Y",
+              "Phase" => "50",
             ]
         );
 
@@ -67,43 +63,37 @@ class FileProcessorTest extends TestCase
 
         $rows = (new FileProcessor())->read('imports/1/test_import_2.txt', '>');
 
-        $outPut = [];
+        $outPut = collect($rows);
 
-        foreach ($rows as $row) {
-            array_push($outPut, $row->all());
-        }
+        $this->assertInstanceOf(MapIterator::class, $rows);
 
-        $this->assertInstanceOf(\Generator::class, $rows);
+        $this->assertCount(2, $outPut);
 
-        $this->assertCount(2, $outPut[0]);
-
-        $first = Arr::first($outPut[0]);
-
-        $this->assertEquals($first,  [
-                "AccountNumber" => "50451",
-                "RecipientName" => "  UNPOSTED CASH",
-                "Address1" => "SEE COMMENTS FOR",
-                "Address2" => "PAYMENTS NOT POSTED",
-                "City" => "MADISON",
-                "State" => "WI",
-                "Zip" => "",
-                "Balance" => "0.00",
-                "RemoveAccount" => "Y",
-                "Client" => "42341",
-                "ClientName" => "STATE COLLECTION SERVICE",
-                "ConsumerAccount" => "50451-",
-                "ClientModel" => "",
-                "ClientAccountNumber" => "UC",
-                "PatientName" => "  UNPOSTED CASH",
-                "DueDate" => "",
-                "AdmitDate" => "",
-                "DischargeDate" => "",
-                "LastName" => "UNPOSTED CASH",
-                "Element1" => "",
-                "TotalDue" => "0.00",
-                "PaymentTypeCode" => "",
-                "FEE" => "Y",
-                "Phase" => "50"
+        $this->assertEquals($outPut->first(),  [
+              "Account Number" => "50451",
+              "Recipient Name" => "  UNPOSTED CASH",
+              "Address1" => "SEE COMMENTS FOR",
+              "Address2" => "PAYMENTS NOT POSTED",
+              "City" => "MADISON",
+              "State" => "WI",
+              "Zip" => "",
+              "Balance" => "0.00",
+              "Remove Account" => "Y",
+              "Client" => "42341",
+              "Client Name" => "STATE COLLECTION SERVICE",
+              "Consumer Account" => "50451-",
+              "Client Model" => "",
+              "Client Account Number" => "UC",
+              "Patient Name" => "  UNPOSTED CASH",
+              "Due Date" => "",
+              "Admit Date" => "",
+              "Discharge Date" => "",
+              "Last Name" => "UNPOSTED CASH",
+              "Element 1" => "",
+              "Total Due" => "0.00",
+              "Payment Type Code" => "",
+              "FEE" => "Y",
+              "Phase" => "50",
             ]
         );
 
@@ -117,20 +107,14 @@ class FileProcessorTest extends TestCase
 
         $rows = (new FileProcessor())->read('imports/1/test_import.csv', ',');
 
-        $outPut = [];
+        $outPut = collect($rows);
 
-        foreach ($rows as $row) {
-            array_push($outPut, $row->all());
-        }
+        $this->assertInstanceOf(MapIterator::class, $rows);
 
-        $this->assertInstanceOf(\Generator::class, $rows);
+        $this->assertCount(231, $outPut);
 
-        $this->assertCount(99, $outPut[0]);
-
-        $first = Arr::first($outPut[0]);
-
-        $this->assertEquals($first,  [
-            "RecordType" => "Account",
+        $this->assertEquals($outPut->first(),  [
+                "RecordType" => "Account",
               "ConsumerFirstName" => "Test",
               "ConsumerLastName" => "Testfeild",
               "StreetName" => "62 North Central Dr.",
@@ -156,7 +140,7 @@ class FileProcessorTest extends TestCase
               "TotalPaid" => "0",
               "PaymentOption" => "0",
               "TokenID" => "LAT106801",
-              "CustomerField1" => "Old National Bank",
+              "CustomerField1" => "Old National Bank"
             ]
         );
 

@@ -3,6 +3,8 @@
 namespace R64\ContentImport\Processors;
 
 use Illuminate\Support\Facades\Storage;
+use League\Csv\Reader;
+use League\Csv\Statement;
 use SplFileObject;
 
 class FileProcessor implements FileProcessorContract
@@ -10,55 +12,13 @@ class FileProcessor implements FileProcessorContract
 
     public function read(string $path, ?string $delimeter)
     {
+        $stream = fopen(Storage::disk('local')->path($path), 'r');
 
-        $file = new SplFileObject(Storage::disk('local')->path($path), 'r');
+        $processor = Reader::createFromStream($stream);
 
-        $count = $this->getFileCount($file);
+        $processor->setHeaderOffset(0);
+        $processor->setDelimiter($delimeter);
 
-        $headers = null;
-        $content = collect([]);
-
-        while (!$file->eof()) {
-            if ($file->key() === 0) {
-
-                $headers = array_map(function ($header) {
-                    return str_replace(' ', '', $header);
-                },  $this->getRow($file->current(), $delimeter));
-
-                $file->next();
-            }
-
-            $row = $this->getRow($file->current(), $delimeter);
-
-            if (count($row) === count($headers)) {
-
-                $content->push(array_combine($headers, $row));
-
-                if ($file->key() % 100 === 0 ) {
-
-                     yield $content;
-                     $content = collect([]);
-                }
-            }
-            $file->next();
-        }
-
-        if ($count <= 100) {
-            yield $content;
-        }
-    }
-
-    private function getRow(string $row, string $delimiter )
-    {
-        return explode($delimiter, str_replace('"', '', trim($row)));
-    }
-
-    private function getFileCount(SplFileObject $file)
-    {
-        $file->seek($file->getSize());
-        $count = $file->key();
-        $file->seek(0);
-
-        return $count;
+        return $processor->getRecords();
     }
 }
