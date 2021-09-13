@@ -42,6 +42,6 @@ class ProcessImportedFilesCommand extends Command
 
         File::unprocessed()
             ->onlyExtensions(config('content_import.extensions'))
-            ->each(fn($file) => ProcessFile::dispatchSync($file, $delimeter));
+            ->each(fn($file) => ProcessFile::dispatch($file, $delimeter));
     }
 }
