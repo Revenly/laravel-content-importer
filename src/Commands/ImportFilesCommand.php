@@ -48,7 +48,8 @@ class ImportFilesCommand extends Command
 
         $folder = $this->option('folder');
 
-        if ($folder && Str::contains($folder, '/')) {
+        if ($folder && Str::contains($folder, '/') && $fileSystem->exists($folder)) {
+
             collect($fileSystem->allFiles($folder))->each(fn($file) => $this->saveImportedFile($file));
             return ;
         }

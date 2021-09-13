@@ -16,5 +16,5 @@ return [
 
     'xlsx' => \R64\ContentImport\Processors\CsvProcessor::class,
 
-    'txt' => \R64\ContentImport\Processors\TxtProcessor::class
+    'txt' => \R64\ContentImport\Processors\FileProcessor::class
 ];
