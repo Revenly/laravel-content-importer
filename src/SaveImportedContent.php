@@ -22,6 +22,10 @@ class SaveImportedContent implements ImportableModel
 
     protected $canUpdateCallback = null;
 
+    protected $afterUpdateCallback = null;
+
+    protected $shouldSkipOnCreateCallback = null;
+
     protected $customAttributesToUpdateCallback = null;
 
     protected $canCreateOrUpdateCallback = null;
@@ -57,6 +61,21 @@ class SaveImportedContent implements ImportableModel
     public function canCreateOrUpdate(Closure $canCreateOrUpdateCallback = null)
     {
         $this->canCreateOrUpdateCallback = $canCreateOrUpdateCallback;
+
+        return $this;
+    }
+
+
+    public function shouldSkipOnCreate(Closure $closure = null)
+    {
+        $this->shouldSkipOnCreateCallback = $closure;
+
+        return $this;
+    }
+
+    public function afterUpdate(Closure $afterUpdate)
+    {
+        $this->afterUpdateCallback = $afterUpdate;
 
         return $this;
     }
@@ -144,6 +163,10 @@ class SaveImportedContent implements ImportableModel
                     return;
                 }
 
+                if ($this->afterUpdateCallback) {
+                    call_user_func($this->afterUpdateCallback, $model);
+                }
+
                 $model->savingFromImport();
             });
         }
@@ -153,6 +176,10 @@ class SaveImportedContent implements ImportableModel
 
             if (!$this->canBeSaved($model)) {
                 return;
+            }
+
+            if ($this->shouldSkipOnCreateCallback) {
+                call_user_func($this->shouldSkipOnCreateCallback, $model);
             }
 
             $model->savingFromImport();
@@ -292,6 +319,7 @@ class SaveImportedContent implements ImportableModel
             $updated = $model::query()->whereId($model->id)
                 ->where('updated_at', '=', $model->updated_at)
                 ->update($items);
+
         } while (!$updated);
 
         return $model;

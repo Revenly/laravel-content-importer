@@ -33,9 +33,13 @@ class MapImportedContent
 
     protected $canUpdateCallback = null;
 
+    protected $skipOnCreateCallback = null;
+
     protected $customAttributesToUpdateCallback = null;
 
     protected $canCreateOrUpdateCallback = null;
+
+    protected $afterUpdateCallback = null;
 
     protected $shouldSkipRow = null;
 
@@ -57,6 +61,13 @@ class MapImportedContent
         $this->content = collect($content);
 
         $this->setImportableModelClass($importableModel);
+
+        return $this;
+    }
+
+    public function shouldSkipOnCreate(Closure $skipOnCreateCallback): self
+    {
+        $this->skipOnCreateCallback = $skipOnCreateCallback;
 
         return $this;
     }
@@ -131,6 +142,13 @@ class MapImportedContent
         return $this;
     }
 
+    public function afterUpdate(Closure $afterUpdate): self
+    {
+        $this->afterUpdateCallback = $afterUpdate;
+
+        return $this;
+    }
+
     public function map(): self
     {
         $this->mappedRows = $this->content->map(function ($row) {
@@ -188,6 +206,8 @@ class MapImportedContent
             ->canCreateOrUpdate($this->canCreateOrUpdateCallback)
             ->customAttributesToUpdate($this->customAttributesToUpdateCallback)
             ->withBeforeUpdate($this->beforeUpdate)
+            ->shouldSkipOnCreate($this->skipOnCreateCallback)
+            ->afterUpdate($this->afterUpdateCallback)
             ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
     }
 
