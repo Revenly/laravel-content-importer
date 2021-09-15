@@ -64,10 +64,12 @@ class ImportFilesCommand extends Command
      */
     private function saveImportedFile(string $url)
     {
-        $file = File::where('url', '=', $url)->where('disk', '=', $this->disk)->first();
+        $model = config('content_import.model') ?? File::class;
+
+        $file = $model::where('url', '=', $url)->where('disk', '=', $this->disk)->first();
 
         if (is_null($file)) {
-            File::create(['url' => $url, 'disk' => $this->disk]);
+            $model::create(['url' => $url, 'disk' => $this->disk]);
         }
     }
 }

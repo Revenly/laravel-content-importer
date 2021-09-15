@@ -4,17 +4,24 @@
  * You can place your custom package configuration in here.
  */
 return [
+
+    /**
+     * s3 bucket directory to import the files from
+     */
     'directory' => 'imports',
 
     'chunck_size' => 1000,
 
     'heading_row' => true,
 
+    /**
+     * allowed extensions to process
+     */
     'extensions' => ['.csv'],
 
-    'csv' => \R64\ContentImport\Processors\CsvProcessor::class,
+    /**
+     * Model for saving imported files.
+     */
+    'model' => \R64\ContentImport\Models\File::class
 
-    'xlsx' => \R64\ContentImport\Processors\CsvProcessor::class,
-
-    'txt' => \R64\ContentImport\Processors\FileProcessor::class
 ];
