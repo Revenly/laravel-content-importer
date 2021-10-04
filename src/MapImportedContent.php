@@ -41,6 +41,8 @@ class MapImportedContent
 
     protected $afterUpdateCallback = null;
 
+    protected $afterCreatedCallback = null;
+
     protected $shouldSkipRow = null;
 
     protected $mappedRows = [];
@@ -96,6 +98,13 @@ class MapImportedContent
     public function withCasting(array $casts): self
     {
         $this->casts = collect($casts);
+
+        return $this;
+    }
+
+    public function afterCreated(Closure $afterCreatedCallback = null): self
+    {
+        $this->afterCreatedCallback = $afterCreatedCallback;
 
         return $this;
     }
@@ -207,6 +216,7 @@ class MapImportedContent
             ->customAttributesToUpdate($this->customAttributesToUpdateCallback)
             ->withBeforeUpdate($this->beforeUpdate)
             ->shouldSkipOnCreate($this->skipOnCreateCallback)
+            ->afterCreatedCallback($this->afterCreatedCallback)
             ->afterUpdate($this->afterUpdateCallback)
             ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
     }
