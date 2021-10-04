@@ -30,6 +30,8 @@ class SaveImportedContent implements ImportableModel
 
     protected $canCreateOrUpdateCallback = null;
 
+    protected $afterCreatedCallback = null;
+
     public function withModel(Model $model): self
     {
         $this->model = $model;
@@ -69,6 +71,13 @@ class SaveImportedContent implements ImportableModel
     public function shouldSkipOnCreate(Closure $closure = null)
     {
         $this->shouldSkipOnCreateCallback = $closure;
+
+        return $this;
+    }
+
+    public function afterCreatedCallback(Closure $closure = null)
+    {
+        $this->afterCreatedCallback = $closure;
 
         return $this;
     }
@@ -183,6 +192,11 @@ class SaveImportedContent implements ImportableModel
             }
 
             $model->savingFromImport();
+
+            if ($this->afterCreatedCallback) {
+                call_user_func($this->afterCreatedCallback, $model);
+            }
+
         });
     }
 
