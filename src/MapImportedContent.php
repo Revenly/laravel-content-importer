@@ -53,6 +53,8 @@ class MapImportedContent
 
     protected $additionalRows = [];
 
+    protected $saveRelationshipCallback = null;
+
     public function __construct(ImportableModel $importableModel = null)
     {
         $this->setImportableModelClass($importableModel);
@@ -173,6 +175,13 @@ class MapImportedContent
         return $this;
     }
 
+    public function saveRelationshipCallback(Closure $closure = null)
+    {
+        $this->saveRelationshipCallback = $closure;
+
+        return $this;
+    }
+
     public function store(array $mappedRows = []): self
     {
         $storeRows = $this->mappedRows;
@@ -184,6 +193,7 @@ class MapImportedContent
         collect($storeRows)->pluck('data')->map(function ($rowData) {
 
             $this->models = [];
+
             $this->dependencies = [];
 
             collect($rowData)->each(function (array $items, string $model) {
@@ -225,7 +235,7 @@ class MapImportedContent
     {
         $rowToMap = collect($rowToMap);
 
-        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
+         return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
             if ($this->isRelationAttribute($attribute)) {
 
                 if (is_array($column) && !is_string(Arr::first($column))) {
@@ -241,6 +251,7 @@ class MapImportedContent
 
             return $this->retrieveColumnFromRow($column, $attribute, $model, $row, $rowToMap);
         })->toArray();
+
     }
 
     protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row, Collection $toMap)

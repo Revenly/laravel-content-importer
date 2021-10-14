@@ -2,6 +2,7 @@
 
 namespace R64\ContentImport;
 
+use App\Models\DebtAccount;
 use Closure;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
@@ -118,8 +119,8 @@ class SaveImportedContent implements ImportableModel
     {
         try {
 
-
             $relationships->each(function ($items, $relation) {
+
                 $relation = str_replace('@', '', $relation);
 
                 $relationType = (new \ReflectionClass($this->model->{$relation}()))->getShortName();
@@ -142,9 +143,28 @@ class SaveImportedContent implements ImportableModel
                     return;
                 }
                 if ($relationType === 'MorphMany') {
-                    $this->model->{$relation}()->createMany($items);
+
+                    foreach ($items as $item) {
+                        $keys = Arr::except(array_merge($item, [
+                            'metadatable_type' => get_class($this->model),
+                            'metadatable_id' => $this->model->id
+                        ]),'value');
+
+                        $existingModel = $relatedModel->where($keys)->first();
+
+                        if ($existingModel) {
+                            $existingModel->forceFill($item);
+
+                            $existingModel->save();
+                        } else {
+
+                            $this->model->{$relation}()->create($item);
+                        }
+                    }
+
                     return;
                 }
+
                 $foreignKey = $this->model->{$relation}()->getForeignKeyName();
 
                 $items[$foreignKey] = $this->model->getKey();
@@ -247,9 +267,7 @@ class SaveImportedContent implements ImportableModel
             return $items;
         }
 
-        $callback = $this->customAttributesToUpdateCallback;
-
-        $customAttributesToUpdate = $callback($model);
+        $customAttributesToUpdate = call_user_func($this->customAttributesToUpdateCallback, $model);
 
         if (!$customAttributesToUpdate) {
             return [];
