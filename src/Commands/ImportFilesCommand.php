@@ -2,6 +2,7 @@
 namespace R64\ContentImport\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use R64\ContentImport\Models\File;
@@ -48,15 +49,14 @@ class ImportFilesCommand extends Command
 
         $folder = $this->option('folder');
 
-        if ($folder && Str::contains($folder, '/') && $fileSystem->exists($folder)) {
-
-            collect($fileSystem->allFiles($folder))->each(fn($file) => $this->saveImportedFile($file));
-            return ;
-        }
-
         collect($fileSystem->allDirectories($folder ?? config('content_import.directory')))
             ->lazy()
-            ->each(fn($path) => collect($fileSystem->allFiles($path))->each(fn($file) => $this->saveImportedFile($file)));
+            ->each(fn($path) => collect($fileSystem->allFiles($path))
+                ->reject(function ($file){
+                $extension = Arr::last(explode('.', $file));
+
+                 return !in_array($extension, config('content_import.extensions'));
+            })->each(fn($file) => dump($file)));
     }
 
     /**
