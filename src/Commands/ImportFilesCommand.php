@@ -56,7 +56,7 @@ class ImportFilesCommand extends Command
                 $extension = Arr::last(explode('.', $file));
 
                  return !in_array($extension, config('content_import.extensions'));
-            })->each(fn($file) => dump($file)));
+            })->each(fn($file) => $this->saveImportedFile($file)));
     }
 
     /**
