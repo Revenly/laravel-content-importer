@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
+use function Symfony\Component\Translation\t;
 
 class SaveImportedContent implements ImportableModel
 {
@@ -144,18 +145,22 @@ class SaveImportedContent implements ImportableModel
                 }
                 if ($relationType === 'MorphMany') {
 
+                    $morphType = $this->model->{$relation}()->getMorphType();
+                    $morphId = $this->guessMorphIdFromType($morphType);
+
                     foreach ($items as $item) {
+
                         $keys = Arr::except(array_merge($item, [
-                            'metadatable_type' => get_class($this->model),
-                            'metadatable_id' => $this->model->id
+                            $morphType => get_class($this->model),
+                            $morphId => $this->model->id
                         ]),'value');
 
                         $existingModel = $relatedModel->where($keys)->first();
 
                         if ($existingModel) {
-                            $existingModel->forceFill($item);
 
-                            $existingModel->save();
+                            $this->optimisticUpdate($existingModel, $item);
+
                         } else {
 
                             $this->model->{$relation}()->create($item);
@@ -192,11 +197,8 @@ class SaveImportedContent implements ImportableModel
                     return;
                 }
 
-                if ($this->afterUpdateCallback) {
-                    call_user_func($this->afterUpdateCallback, $model);
-                }
+                $this->optimisticUpdate($model, $items);
 
-                $model->savingFromImport();
             });
         }
 
@@ -212,10 +214,6 @@ class SaveImportedContent implements ImportableModel
             }
 
             $model->savingFromImport();
-
-            if ($this->afterCreatedCallback) {
-                call_user_func($this->afterCreatedCallback, $model);
-            }
 
         });
     }
@@ -344,16 +342,20 @@ class SaveImportedContent implements ImportableModel
      */
     protected function optimisticUpdate(Model $model, array $items): Model
     {
-        $updated = false;
+        $model->update($items);
 
-        do {
-            $model = $model->fresh();
-            $updated = $model::query()->whereId($model->id)
-                ->where('updated_at', '=', $model->updated_at)
-                ->update($items);
+        if ($this->afterUpdateCallback) {
 
-        } while (!$updated);
+            call_user_func($this->afterUpdateCallback, $model->refresh());
+        }
 
-        return $model;
+        return $model->refresh();
+    }
+
+    private function guessMorphIdFromType(string $type)
+    {
+        $suffix = Arr::last(explode('_', $type));
+
+        return str_replace("_$suffix", "_id", $type);
     }
 }
