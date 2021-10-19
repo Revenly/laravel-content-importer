@@ -53,7 +53,6 @@ class MapImportedContent
 
     protected $additionalRows = [];
 
-    protected $saveRelationshipCallback = null;
 
     public function __construct(ImportableModel $importableModel = null)
     {
@@ -171,13 +170,6 @@ class MapImportedContent
         })->reject(function ($data) {
             return $this->shouldSkipRow && call_user_func($this->shouldSkipRow, $data['row']);
         })->toArray();
-
-        return $this;
-    }
-
-    public function saveRelationshipCallback(Closure $closure = null)
-    {
-        $this->saveRelationshipCallback = $closure;
 
         return $this;
     }
