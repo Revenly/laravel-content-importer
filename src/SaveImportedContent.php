@@ -150,12 +150,12 @@ class SaveImportedContent implements ImportableModel
 
                     foreach ($items as $item) {
 
-                        $keys = Arr::except(array_merge($item, [
+                        $keys = array_merge($item, [
                             $morphType => get_class($this->model),
                             $morphId => $this->model->id
-                        ]),'value');
+                        ]);
 
-                        $existingModel = $relatedModel->where($keys)->first();
+                        $existingModel = $this->getModelIfExists($relatedModel, $keys);
 
                         if ($existingModel) {
 
@@ -188,6 +188,7 @@ class SaveImportedContent implements ImportableModel
         }
 
         if ($existedModel) {
+
             $items = $this->handleItemsBeforeUpdate($existedModel, $items);
 
             return tap($existedModel, function ($model) use ($items) {
@@ -309,6 +310,7 @@ class SaveImportedContent implements ImportableModel
             }
         });
 
+
         return $query->first();
     }
 
@@ -342,7 +344,7 @@ class SaveImportedContent implements ImportableModel
      */
     protected function optimisticUpdate(Model $model, array $items): Model
     {
-        $model->update($items);
+        $model->update(array_merge($items, ['imported_at' => now()]));
 
         if ($this->afterUpdateCallback) {
 
