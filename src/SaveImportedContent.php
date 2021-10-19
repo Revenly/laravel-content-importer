@@ -118,8 +118,8 @@ class SaveImportedContent implements ImportableModel
     {
         try {
 
-
             $relationships->each(function ($items, $relation) {
+
                 $relation = str_replace('@', '', $relation);
 
                 $relationType = (new \ReflectionClass($this->model->{$relation}()))->getShortName();
@@ -142,9 +142,32 @@ class SaveImportedContent implements ImportableModel
                     return;
                 }
                 if ($relationType === 'MorphMany') {
-                    $this->model->{$relation}()->createMany($items);
+
+                    $morphType = $this->model->{$relation}()->getMorphType();
+                    $morphId = $this->guessMorphIdFromType($morphType);
+
+                    foreach ($items as $item) {
+
+                        $keys = array_merge($item, [
+                            $morphType => get_class($this->model),
+                            $morphId => $this->model->id
+                        ]);
+
+                        $existingModel = $this->getModelIfExists($relatedModel, $keys);
+
+                        if ($existingModel) {
+
+                            $this->optimisticUpdate($existingModel, $item);
+
+                        } else {
+
+                            $this->model->{$relation}()->create($item);
+                        }
+                    }
+
                     return;
                 }
+
                 $foreignKey = $this->model->{$relation}()->getForeignKeyName();
 
                 $items[$foreignKey] = $this->model->getKey();
@@ -163,6 +186,7 @@ class SaveImportedContent implements ImportableModel
         }
 
         if ($existedModel) {
+
             $items = $this->handleItemsBeforeUpdate($existedModel, $items);
 
             return tap($existedModel, function ($model) use ($items) {
@@ -172,11 +196,8 @@ class SaveImportedContent implements ImportableModel
                     return;
                 }
 
-                if ($this->afterUpdateCallback) {
-                    call_user_func($this->afterUpdateCallback, $model);
-                }
+                $this->optimisticUpdate($model, $items);
 
-                $model->savingFromImport();
             });
         }
 
@@ -192,10 +213,6 @@ class SaveImportedContent implements ImportableModel
             }
 
             $model->savingFromImport();
-
-            if ($this->afterCreatedCallback) {
-                call_user_func($this->afterCreatedCallback, $model);
-            }
 
         });
     }
@@ -247,9 +264,7 @@ class SaveImportedContent implements ImportableModel
             return $items;
         }
 
-        $callback = $this->customAttributesToUpdateCallback;
-
-        $customAttributesToUpdate = $callback($model);
+        $customAttributesToUpdate = call_user_func($this->customAttributesToUpdateCallback, $model);
 
         if (!$customAttributesToUpdate) {
             return [];
@@ -293,6 +308,7 @@ class SaveImportedContent implements ImportableModel
             }
         });
 
+
         return $query->first();
     }
 
@@ -326,16 +342,20 @@ class SaveImportedContent implements ImportableModel
      */
     protected function optimisticUpdate(Model $model, array $items): Model
     {
-        $updated = false;
+        $model->update(array_merge($items, ['imported_at' => now()]));
 
-        do {
-            $model = $model->fresh();
-            $updated = $model::query()->whereId($model->id)
-                ->where('updated_at', '=', $model->updated_at)
-                ->update($items);
+        if ($this->afterUpdateCallback) {
 
-        } while (!$updated);
+            call_user_func($this->afterUpdateCallback, $model->refresh());
+        }
 
-        return $model;
+        return $model->refresh();
+    }
+
+    private function guessMorphIdFromType(string $type)
+    {
+        $suffix = Arr::last(explode('_', $type));
+
+        return str_replace("_$suffix", "_id", $type);
     }
 }
