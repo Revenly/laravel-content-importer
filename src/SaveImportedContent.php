@@ -32,6 +32,8 @@ class SaveImportedContent implements ImportableModel
 
     protected $afterCreatedCallback = null;
 
+    protected $firstRun = false;
+
     public function withModel(Model $model): self
     {
         $this->model = $model;
@@ -78,6 +80,18 @@ class SaveImportedContent implements ImportableModel
     public function afterCreatedCallback(Closure $closure = null)
     {
         $this->afterCreatedCallback = $closure;
+
+        return $this;
+    }
+
+    /**
+     * @param bool $firstRun
+     *
+     * @return SaveImportedContent
+     */
+    public function isFirstRun(bool $firstRun): SaveImportedContent
+    {
+        $this->firstRun = $firstRun;
 
         return $this;
     }
@@ -146,30 +160,46 @@ class SaveImportedContent implements ImportableModel
                     $morphType = $this->model->{$relation}()->getMorphType();
                     $morphId = $this->guessMorphIdFromType($morphType);
 
-                    foreach ($items as $item) {
+                    // @TODO This neglects the check and update on first run
+                    // and inserts all data in 1 multi insert
+                    if ($this->firstRun) {
+                        $items = array_map(fn ($item) =>
+                            array_merge($item, [
+                                $morphType => get_class($this->model),
+                                $morphId => $this->model->id,
+                                'created_at' => now(),
+                                'updated_at' => now()
+                            ]),
+                            $items
+                        );
 
-                        $keys = array_merge($item, [
-                            $morphType => get_class($this->model),
-                            $morphId => $this->model->id
-                        ]);
+                        $relatedModel::insert($items);
+                    } else {
+                        foreach ($items as $item) {
 
-                        $existingModel = $this->getModelIfExists($relatedModel, $keys);
+                            $keys = array_merge($item, [
+                                $morphType => get_class($this->model),
+                                $morphId => $this->model->id
+                            ]);
 
-                        if ($existingModel) {
+                            $existingModel = $this->getModelIfExists($relatedModel, $keys);
 
-                            $customAttributesToUpdate = $this->getCustomAttributesToUpdate($existingModel, $items);
+                            if ($existingModel) {
 
-                            if (is_array($customAttributesToUpdate) && is_array(Arr::first($customAttributesToUpdate))) {
-                                foreach ($customAttributesToUpdate as $attributeToUpdate) {
-                                    $this->optimisticUpdate($existingModel, $keys);
+                                $customAttributesToUpdate = $this->getCustomAttributesToUpdate($existingModel, $items);
+
+                                if (is_array($customAttributesToUpdate) && is_array(Arr::first($customAttributesToUpdate))) {
+                                    foreach ($customAttributesToUpdate as $attributeToUpdate) {
+                                        $this->optimisticUpdate($existingModel, $keys);
+                                    }
+                                } else {
+                                    $this->optimisticUpdate($existingModel, $customAttributesToUpdate);
                                 }
+
                             } else {
-                                $this->optimisticUpdate($existingModel, $customAttributesToUpdate);
+
+                                $this->model->{$relation}()->create($item);
                             }
-
-                        } else {
-
-                            $this->model->{$relation}()->create($item);
                         }
                     }
 
@@ -189,7 +219,7 @@ class SaveImportedContent implements ImportableModel
     {
         $existedModel = $this->getModelIfExists($model, $items);
 
-        if ($existedModel && !$this->shouldUpdateModel($existedModel)) {
+        if ($existedModel && !$this->shouldUpdateModel($existedModel, $items)) {
             return $existedModel;
         }
 
@@ -211,6 +241,7 @@ class SaveImportedContent implements ImportableModel
         }
 
         return tap($model, function ($model) use ($items) {
+
             $model->forceFill(array_merge($items));
 
             if (!$this->canBeSaved($model)) {
@@ -241,7 +272,7 @@ class SaveImportedContent implements ImportableModel
         return false;
     }
 
-    protected function shouldUpdateModel(Model $model): bool
+    protected function shouldUpdateModel(Model $model, $items): bool
     {
         $callback = $this->canUpdateCallback;
 
@@ -249,7 +280,7 @@ class SaveImportedContent implements ImportableModel
             return true;
         }
 
-        return $callback($model);
+        return $callback($model, $items);
     }
 
     protected function handleItemsBeforeUpdate(Model $existedModel, array $items): array
