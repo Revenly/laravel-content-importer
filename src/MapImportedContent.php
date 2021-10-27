@@ -53,6 +53,7 @@ class MapImportedContent
 
     protected $additionalRows = [];
 
+    protected $firstRun = false;
 
     public function __construct(ImportableModel $importableModel = null)
     {
@@ -159,6 +160,18 @@ class MapImportedContent
         return $this;
     }
 
+    /**
+     * @param bool $firstRun
+     *
+     * @return MapImportedContent
+     */
+    public function isFirstRun(bool $firstRun): MapImportedContent
+    {
+        $this->firstRun = $firstRun;
+
+        return $this;
+    }
+
     public function map(): self
     {
         $this->mappedRows = $this->content->map(function ($row) {
@@ -212,6 +225,7 @@ class MapImportedContent
     protected function savingModel(Model $model, array $items): Model
     {
         return $this->importableModel
+            ->isFirstRun($this->firstRun)
             ->withModel(new $model)
             ->canUpdate($this->canUpdateCallback)
             ->canCreateOrUpdate($this->canCreateOrUpdateCallback)
