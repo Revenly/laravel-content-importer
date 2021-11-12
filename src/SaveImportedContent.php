@@ -30,6 +30,8 @@ class SaveImportedContent implements ImportableModel
 
     protected $canCreateOrUpdateCallback = null;
 
+    protected $beforeCreatedCallback = null;
+
     protected $afterCreatedCallback = null;
 
     protected $firstRun = false;
@@ -73,6 +75,16 @@ class SaveImportedContent implements ImportableModel
     public function shouldSkipOnCreate(Closure $closure = null)
     {
         $this->shouldSkipOnCreateCallback = $closure;
+
+        return $this;
+    }
+
+    /**
+     * @param null $beforeCreatedCallback
+     */
+    public function beforeCreatedCallback($beforeCreatedCallback)
+    {
+        $this->beforeCreatedCallback = $beforeCreatedCallback;
 
         return $this;
     }
@@ -250,6 +262,10 @@ class SaveImportedContent implements ImportableModel
 
             if ($this->shouldSkipOnCreateCallback) {
                 call_user_func($this->shouldSkipOnCreateCallback, $model);
+            }
+
+            if ($this->beforeCreatedCallback) {
+                call_user_func($this->beforeCreatedCallback, $model);
             }
 
             $model->savingFromImport();
