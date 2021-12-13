@@ -58,7 +58,15 @@ class ProcessFile implements ShouldQueue
 
     private function processCollectionOutput(Collection $collection)
     {
-        $records = array_map(fn ($record) => array_change_key_case($record, CASE_LOWER), $collection->toArray());
+        $records = array_map(function ($record) {
+            foreach ($record as $key => $value) {
+                $key = str_replace(' ', '', strtolower($key));
+                $record[$key] = $value;
+            }
+
+            return $record;
+        }, $collection->toArray());
+
         ImportedContent::create([
             'file_id' => $this->file->id,
             'data' => mb_convert_encoding(array_values($records), 'UTF-8', 'UTF-8')
