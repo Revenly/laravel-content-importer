@@ -47,11 +47,9 @@ class ProcessFile implements ShouldQueue
 
         $output = (new FileProcessor())->read($this->file->url, $delimeter);
 
-        $chunks = array_chunk($output, 100);
-
-        foreach ($chunks as $chunk) {
-            $this->processCollectionOutput($chunk);
-        }
+        collect($output)
+            ->chunk(100)
+            ->each(fn($chunk) => $this->processCollectionOutput($chunk));
 
         $this->file->markAsProcessed();
 

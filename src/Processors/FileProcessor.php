@@ -20,7 +20,7 @@ class FileProcessor implements FileProcessorContract
         $processor->setDelimiter($delimeter);
 
         $headers = array_map(function ($header) {
-            return str_replace(' ', '', $header);
+            return strtolower(str_replace(' ', '', $header));
         }, $processor->getHeader());
 
         return $processor->getRecords($headers);
