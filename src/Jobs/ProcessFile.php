@@ -59,12 +59,13 @@ class ProcessFile implements ShouldQueue
     private function processCollectionOutput(Collection $collection)
     {
         $records = array_map(function ($record) {
+            $newRecord = [];
             foreach ($record as $key => $value) {
                 $key = str_replace(' ', '', strtolower($key));
-                $record[$key] = $value;
+                $newRecord[$key] = $value;
             }
 
-            return $record;
+            return $newRecord;
         }, $collection->toArray());
 
         ImportedContent::create([
