@@ -47,9 +47,11 @@ class ProcessFile implements ShouldQueue
 
         $output = (new FileProcessor())->read($this->file->url, $delimeter);
 
-        collect($output)
-            ->chunk(100)
-            ->each(fn($chunk) => $this->processCollectionOutput($chunk));
+        $chunks = array_chunk($output, 100);
+
+        foreach ($chunks as $chunk) {
+            $this->processCollectionOutput($chunk);
+        }
 
         $this->file->markAsProcessed();
 
@@ -58,19 +60,9 @@ class ProcessFile implements ShouldQueue
 
     private function processCollectionOutput(Collection $collection)
     {
-        $records = array_map(function ($record) {
-            $newRecord = [];
-            foreach ($record as $key => $value) {
-                $key = str_replace(' ', '', strtolower($key));
-                $newRecord[$key] = $value;
-            }
-
-            return $newRecord;
-        }, $collection->toArray());
-
         ImportedContent::create([
             'file_id' => $this->file->id,
-            'data' => mb_convert_encoding(array_values($records), 'UTF-8', 'UTF-8')
+            'data' => mb_convert_encoding(array_values($collection->toArray()), 'UTF-8', 'UTF-8')
         ]);
     }
 }

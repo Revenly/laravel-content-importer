@@ -19,6 +19,10 @@ class FileProcessor implements FileProcessorContract
         $processor->setHeaderOffset(0);
         $processor->setDelimiter($delimeter);
 
-        return $processor->getRecords();
+        $headers = array_map(function ($header) {
+            return str_replace(' ', '', $header);
+        }, $processor->getHeader());
+
+        return $processor->getRecords($headers);
     }
 }
