@@ -55,7 +55,7 @@ class ImportFilesCommand extends Command
                 ->reject(function ($file){
                 $extension = Arr::last(explode('.', $file));
 
-                 return !in_array($extension, config('content_import.extensions'));
+                 return !in_array($extension, str_replace('.', '', config('content_import.extensions')));
             })->each(fn($file) => $this->saveImportedFile($file)));
     }
 
