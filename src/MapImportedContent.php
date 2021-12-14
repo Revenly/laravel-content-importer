@@ -127,7 +127,7 @@ class MapImportedContent
         return $this;
     }
 
-    public function beforeUpdated(Closure $beforeUpdatedCallback)
+    public function beforeUpdated(Closure $beforeUpdatedCallback = null)
     {
         $this->beforeUpdatedCallback = $beforeUpdatedCallback;
 

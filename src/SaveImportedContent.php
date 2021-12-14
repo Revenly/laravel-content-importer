@@ -98,7 +98,7 @@ class SaveImportedContent implements ImportableModel
         return $this;
     }
 
-    public function beforeUpdatedCallback(Closure $closure)
+    public function beforeUpdatedCallback(Closure $closure = null)
     {
         $this->beforeUpdatedCallback = $closure;
 
