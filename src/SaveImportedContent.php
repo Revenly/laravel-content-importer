@@ -34,6 +34,8 @@ class SaveImportedContent implements ImportableModel
 
     protected $afterCreatedCallback = null;
 
+    protected $beforeUpdatedCallback = null;
+
     protected $firstRun = false;
 
     public function withModel(Model $model): self
@@ -92,6 +94,13 @@ class SaveImportedContent implements ImportableModel
     public function afterCreatedCallback(Closure $closure = null)
     {
         $this->afterCreatedCallback = $closure;
+
+        return $this;
+    }
+
+    public function beforeUpdatedCallback(Closure $closure)
+    {
+        $this->beforeUpdatedCallback = $closure;
 
         return $this;
     }
@@ -247,6 +256,10 @@ class SaveImportedContent implements ImportableModel
                     return;
                 }
 
+                if ($this->beforeUpdatedCallback) {
+                    call_user_func($this->beforeUpdatedCallback, $model);
+                }
+
                 $this->optimisticUpdate($model, $items);
 
             });
@@ -265,7 +278,7 @@ class SaveImportedContent implements ImportableModel
             }
 
             if ($this->beforeCreatedCallback) {
-                call_user_func($this->beforeCreatedCallback, $model);
+                call_user_func($this->beforeCreatedCallback, $model, $items);
             }
 
             $model->savingFromImport();

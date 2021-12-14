@@ -43,6 +43,8 @@ class MapImportedContent
 
     protected $beforeCreatedCallback = null;
 
+    protected $beforeUpdatedCallback = null;
+
     protected $afterCreatedCallback = null;
 
     protected $shouldSkipRow = null;
@@ -121,6 +123,13 @@ class MapImportedContent
     public function afterCreated(Closure $afterCreatedCallback = null): self
     {
         $this->afterCreatedCallback = $afterCreatedCallback;
+
+        return $this;
+    }
+
+    public function beforeUpdated(Closure $beforeUpdatedCallback)
+    {
+        $this->beforeUpdatedCallback = $beforeUpdatedCallback;
 
         return $this;
     }
@@ -248,6 +257,7 @@ class MapImportedContent
             ->shouldSkipOnCreate($this->skipOnCreateCallback)
             ->beforeCreatedCallback($this->beforeCreatedCallback)
             ->afterCreatedCallback($this->afterCreatedCallback)
+            ->beforeUpdatedCallback($this->beforeUpdatedCallback)
             ->afterUpdate($this->afterUpdateCallback)
             ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
     }
