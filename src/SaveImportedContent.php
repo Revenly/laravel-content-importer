@@ -219,7 +219,11 @@ class SaveImportedContent implements ImportableModel
 
                             } else {
 
-                                $this->model->{$relation}()->create($item);
+                                $model = $this->model->{$relation}()->create($item);
+
+                                if ($this->afterCreatedCallback) {
+                                    call_user_func($this->afterCreatedCallback, $model, $items);
+                                }
                             }
                         }
                     }
@@ -283,6 +287,9 @@ class SaveImportedContent implements ImportableModel
 
             $model->savingFromImport();
 
+            if ($this->afterCreatedCallback) {
+                call_user_func($this->afterCreatedCallback, $model, $items);
+            }
         });
     }
 
