@@ -210,7 +210,7 @@ class SaveImportedContent implements ImportableModel
                                 $customAttributesToUpdate = $this->getCustomAttributesToUpdate($existingModel, $items);
 
                                 if (is_array($customAttributesToUpdate) && is_array(Arr::first($customAttributesToUpdate))) {
-                                    foreach ($customAttributesToUpdate as $attributeToUpdate) {
+                                    if (in_array($keys['attribute'], collect($customAttributesToUpdate)->pluck('attribute')->all())) {
                                         $this->optimisticUpdate($existingModel, $keys);
                                     }
                                 } else {
@@ -349,8 +349,8 @@ class SaveImportedContent implements ImportableModel
         if(is_array($items) && is_array(Arr::first($items))) {
 
             return collect($items)->filter(function ($item) use($customAttributesToUpdate) {
-               $attribute = Arr::first(array_values($item));
-               return in_array($attribute, $customAttributesToUpdate);
+                $attribute = $item['attribute'];
+                return in_array($attribute, $customAttributesToUpdate);
             })->toArray();
         }
 
