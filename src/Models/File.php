@@ -9,11 +9,16 @@ class File extends Model
 {
     //use HasFactory;
 
-    protected $fillable = ['url', 'disk', 'processed_at'];
+    protected $fillable = ['url', 'disk', 'processed_at', 'skipped_at'];
 
     public function scopeUnprocessed($query)
     {
         return $query->whereNull('processed_at');
+    }
+
+    public function scopeNotSkipped($query)
+    {
+        return $query->whereNull('skipped_at');
     }
 
     public function scopeOnlyExtensions($query, $extensions = [])
@@ -30,6 +35,11 @@ class File extends Model
     public function markAsProcessed()
     {
         return $this->update(['processed_at' => now()]);
+    }
+
+    public function markAsSkipped()
+    {
+        return $this->update(['skipped_at' => now()]);
     }
 
     public function content()
