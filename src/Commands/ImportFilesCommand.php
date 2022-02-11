@@ -53,9 +53,12 @@ class ImportFilesCommand extends Command
             ->lazy()
             ->each(fn($path) => collect($fileSystem->allFiles($path))
                 ->reject(function ($file){
-                $extension = Arr::last(explode('.', $file));
+                    $extension = strtolower(Arr::last(explode('.', $file)));
 
-                 return !in_array($extension, str_replace('.', '', config('content_import.extensions')));
+                    $availableExtensions = str_replace('.', '', config('content_import.extensions'));
+                    $availableExtensions = array_map(fn ($extension) => strtolower($extension), $availableExtensions);
+
+                    return !in_array($extension, $availableExtensions);
             })->each(fn($file) => $this->saveImportedFile($file)));
     }
 

@@ -38,12 +38,13 @@ class ProcessFile implements ShouldQueue
             );
         }
 
+        $fileExtension = strtolower($this->file->extension());
 
-        if ($this->file->extension() === 'txt' && is_null($this->delimeter)) {
+        if ($fileExtension === 'txt' && is_null($this->delimeter)) {
             throw new \Exception("delimeter option is required when dealing with txt files");
         }
 
-        $delimeter = $this->file->extension() === 'txt' ? $this->delimeter : ',';
+        $delimeter = $fileExtension === 'txt' ? $this->delimeter : ',';
 
         $output = (new FileProcessor())->read($this->file->url, $delimeter);
 
