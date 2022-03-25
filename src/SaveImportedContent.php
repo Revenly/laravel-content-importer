@@ -4,6 +4,7 @@ namespace R64\ContentImport;
 
 use Closure;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
@@ -186,7 +187,7 @@ class SaveImportedContent implements ImportableModel
                     if ($this->firstRun) {
                         $items = array_map(fn ($item) =>
                             array_merge($item, [
-                                $morphType => get_class($this->model),
+                                $morphType => $this->getMorphType($this->model),
                                 $morphId => $this->model->id,
                                 'created_at' => now(),
                                 'updated_at' => now()
@@ -199,7 +200,7 @@ class SaveImportedContent implements ImportableModel
                         foreach ($items as $item) {
 
                             $keys = array_merge($item, [
-                                $morphType => get_class($this->model),
+                                $morphType => $this->getMorphType($this->model),
                                 $morphId => $this->model->id
                             ]);
 
@@ -441,5 +442,13 @@ class SaveImportedContent implements ImportableModel
         $suffix = Arr::last(explode('_', $type));
 
         return str_replace("_$suffix", "_id", $type);
+    }
+
+    private function getMorphType($model)
+    {
+        $inverseMorphMap = array_flip(Relation::morphMap());
+
+        return $inverseMorphMap[get_class($this->model)] ?? get_class($this->model);
+
     }
 }
