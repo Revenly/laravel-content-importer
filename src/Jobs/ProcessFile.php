@@ -46,15 +46,19 @@ class ProcessFile implements ShouldQueue
 
         $delimeter = $fileExtension === 'txt' ? $this->delimeter : ',';
 
-        $output = (new FileProcessor())->read($this->file->url, $delimeter);
+        try {
+            $output = (new FileProcessor())->read($this->file->url, $delimeter);
 
-        collect($output)
-            ->chunk(100)
-            ->each(fn($chunk) => $this->processCollectionOutput($chunk));
+            collect($output)
+                ->chunk(100)
+                ->each(fn($chunk) => $this->processCollectionOutput($chunk));
 
-        $this->file->markAsProcessed();
+            $this->file->markAsProcessed();
 
-        Storage::disk('local')->delete($this->file->url);
+            Storage::disk('local')->delete($this->file->url);
+        } catch (\Exception $exception) {
+            info($exception->getMessage());
+        }
     }
 
     private function processCollectionOutput(Collection $collection)
