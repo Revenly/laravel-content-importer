@@ -22,6 +22,7 @@
     ],
     "require": {
         "php": "^7.4",
+        "doctrine/dbal": "^3.3",
         "illuminate/database": "^8.0",
         "illuminate/support": "^8.0",
         "league/csv": "^9.7",
