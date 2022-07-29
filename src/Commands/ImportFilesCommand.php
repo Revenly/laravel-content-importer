@@ -49,7 +49,7 @@ class ImportFilesCommand extends Command
 
         $folder = $this->option('folder');
 
-        collect($fileSystem->allDirectories($folder ?? config('content_import.directory')))
+        collect($fileSystem->directories($folder ?? config('content_import.directory')))
             ->lazy()
             ->each(fn($path) => collect($fileSystem->allFiles($path))
                 ->reject(function ($file){
