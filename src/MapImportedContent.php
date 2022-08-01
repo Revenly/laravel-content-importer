@@ -49,6 +49,8 @@ class MapImportedContent
 
     protected $shouldSkipRow = null;
 
+    protected $shouldSkipBeforeTransformation = null;
+
     protected $mappedRows = [];
 
     protected $validators;
@@ -97,6 +99,13 @@ class MapImportedContent
     public function shouldSkipRow(Closure $shouldSkipRow): self
     {
         $this->shouldSkipRow = $shouldSkipRow;
+
+        return $this;
+    }
+
+    public function shouldSkipBeforeTransformation(Closure $shouldSkipBeforeTransformation): self
+    {
+        $this->shouldSkipBeforeTransformation = $shouldSkipBeforeTransformation;
 
         return $this;
     }
@@ -197,15 +206,18 @@ class MapImportedContent
 
     public function map(): self
     {
-        $this->mappedRows = $this->content->map(function ($row) {
-            $row = array_merge($row, $this->additionalRows);
-            return [
-                'row' => $row,
-                'data' => $this->mapRow($row),
-            ];
-        })->reject(function ($data) {
-            return $this->shouldSkipRow && call_user_func($this->shouldSkipRow, $data['row']);
-        })->toArray();
+        $this->mappedRows = $this->content->reject(function ($row) {
+            return $this->shouldSkipBeforeTransformation && call_user_func($this->shouldSkipBeforeTransformation, $row);
+        })
+            ->map(function ($row) {
+                $row = array_merge($row, $this->additionalRows);
+                return [
+                    'row' => $row,
+                    'data' => $this->mapRow($row),
+                ];
+            })->reject(function ($data) {
+                return $this->shouldSkipRow && call_user_func($this->shouldSkipRow, $data['row']);
+            })->toArray();
 
         return $this;
     }
@@ -266,7 +278,7 @@ class MapImportedContent
     {
         $rowToMap = collect($rowToMap);
 
-         return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
+        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
             if ($this->isRelationAttribute($attribute)) {
 
                 if (is_array($column) && !is_string(Arr::first($column))) {
