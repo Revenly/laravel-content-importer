@@ -19,6 +19,8 @@ return [
      */
     'extensions' => ['.csv'],
 
+    'supported_delimiters' => [';', ',', '|', '\t'],
+
     /**
      * Model for saving imported files.
      */
