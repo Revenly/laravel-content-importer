@@ -2,10 +2,7 @@
 
 namespace R64\ContentImport;
 
-use Illuminate\Container\Container;
 use R64\ContentImport\Commands\ImportFilesCommand;
-use R64\ContentImport\Commands\ProcessImportedFilesCommand;
-use R64\ContentImport\ContentImport as ImportClass;
 use Illuminate\Support\ServiceProvider;
 
 class ContentImportServiceProvider extends ServiceProvider
@@ -17,10 +14,7 @@ class ContentImportServiceProvider extends ServiceProvider
     {
          //$this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
-         $this->commands([
-             ImportFilesCommand::class,
-             ProcessImportedFilesCommand::class
-         ]);
+         $this->commands([ImportFilesCommand::class,]);
 
         if ($this->app->runningInConsole()) {
             $this->publishes([
