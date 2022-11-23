@@ -16,11 +16,17 @@ class ProcessFile implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public File $file;
+    private File $file;
+    private bool $deleteFile;
 
-    public function __construct(File $file)
+    /**
+     * @param File $file
+     * @param bool $deleteFile
+     */
+    public function __construct(File $file, bool $deleteFile)
     {
-        $this->file = $file;
+        $this->file       = $file;
+        $this->deleteFile = $deleteFile;
     }
 
     public function handle()
@@ -40,6 +46,10 @@ class ProcessFile implements ShouldQueue
                 ->each(fn($chunk) => $this->processCollectionOutput($chunk));
 
             $this->file->markAsProcessed();
+
+            if ($this->deleteFile) {
+                Storage::disk('local')->delete($this->file->url);
+            }
         } catch (\Exception $exception) {
             info($exception->getMessage());
         }

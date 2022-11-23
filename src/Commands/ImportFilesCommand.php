@@ -4,7 +4,7 @@ namespace R64\ContentImport\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
+use R64\ContentImport\Jobs\ProcessFile;
 use R64\ContentImport\Models\File;
 
 class ImportFilesCommand extends Command
@@ -14,14 +14,14 @@ class ImportFilesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'files:import {--F|folder=}';
+    protected $signature = 'files:import {--F|folder=} {--delete=1}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Import files to be processed';
+    protected $description = 'Import and process files';
 
     protected string $disk;
 
@@ -48,18 +48,10 @@ class ImportFilesCommand extends Command
         $fileSystem = Storage::disk($this->disk);
 
         $folder = $this->option('folder');
+        $deleteFile = (bool) $this->option('delete') ?? true;
 
-        collect($fileSystem->directories($folder ?? config('content_import.directory')))
-            ->lazy()
-            ->each(fn($path) => collect($fileSystem->allFiles($path))
-                ->reject(function ($file){
-                    $extension = strtolower(Arr::last(explode('.', $file)));
-
-                    $availableExtensions = str_replace('.', '', config('content_import.extensions'));
-                    $availableExtensions = array_map(fn ($extension) => strtolower($extension), $availableExtensions);
-
-                    return !in_array($extension, $availableExtensions);
-            })->each(fn($file) => $this->saveImportedFile($file)));
+        $this->createFilesFromDisk($fileSystem, $folder);
+        $this->processFiles($deleteFile);
     }
 
     /**
@@ -74,5 +66,38 @@ class ImportFilesCommand extends Command
         if (is_null($file)) {
             $model::create(['url' => $url, 'disk' => $this->disk]);
         }
+    }
+
+    /**
+     * @param \Illuminate\Contracts\Filesystem\Filesystem $fileSystem
+     * @param                                             $folder
+     *
+     * @return void
+     */
+    protected function createFilesFromDisk(\Illuminate\Contracts\Filesystem\Filesystem $fileSystem, $folder): void
+    {
+        collect($fileSystem->directories($folder ?? config('content_import.directory')))
+            ->lazy()
+            ->each(fn($path) => collect($fileSystem->allFiles($path))
+                ->reject(function ($file) {
+                    $extension = strtolower(Arr::last(explode('.', $file)));
+
+                    $availableExtensions = str_replace('.', '', config('content_import.extensions'));
+                    $availableExtensions = array_map(fn($extension) => strtolower($extension), $availableExtensions);
+
+                    return !in_array($extension, $availableExtensions);
+                })->each(fn($file) => $this->saveImportedFile($file)));
+    }
+
+    /**
+     * @param bool $deleteFile
+     *
+     * @return void
+     */
+    protected function processFiles(bool $deleteFile): void
+    {
+        File::unprocessed()
+            ->onlyExtensions(array_map('strtolower', config('content_import.extensions')))
+            ->each(fn($file) => ProcessFile::dispatch($file, $deleteFile));
     }
 }
