@@ -17,7 +17,7 @@ class FileProcessorTest extends TestCase
     {
         Storage::disk('local')->putFileAs('imports/1/', new File('tests/files/test_import.txt'), 'test_import.txt');
 
-        $rows = (new FileProcessor())->read('imports/1/test_import.txt', '|');
+        $rows = (new FileProcessor())->read('imports/1/test_import.txt');
         $outPut = collect($rows);
 
 
@@ -57,12 +57,12 @@ class FileProcessorTest extends TestCase
     }
 
     /** @test */
-    public function it_can_process_txt_files_with_different_delimeters()
+    public function it_can_process_txt_files_with_different_delimiters()
     {
         config(['content_import.supported_delimiters' => ['>']]);
         Storage::disk('local')->putFileAs('imports/1/', new File('tests/files/test_import_2.txt'), 'test_import_2.txt');
 
-        $rows = (new FileProcessor())->read('imports/1/test_import_2.txt', '>');
+        $rows = (new FileProcessor())->read('imports/1/test_import_2.txt');
 
         $outPut = collect($rows);
 
@@ -106,7 +106,7 @@ class FileProcessorTest extends TestCase
     {
         Storage::disk('local')->putFileAs('imports/1/', new File('tests/files/test_import.csv'), 'test_import.csv');
 
-        $rows = (new FileProcessor())->read('imports/1/test_import.csv', ',');
+        $rows = (new FileProcessor())->read('imports/1/test_import.csv');
 
         $outPut = collect($rows);
 

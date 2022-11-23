@@ -4,13 +4,12 @@ namespace R64\ContentImport\Processors;
 
 use Illuminate\Support\Facades\Storage;
 use League\Csv\Reader;
-use League\Csv\Statement;
-use SplFileObject;
 
 class FileProcessor implements FileProcessorContract
 {
-
-    public function read(string $path, ?string $delimeter)
+    // When delimiter is not found, csv is returned as 1 column
+    // same thing when you have just 1 column
+    public function read(string $path)
     {
         $delimiter = $this->findDelimiter($path);
 

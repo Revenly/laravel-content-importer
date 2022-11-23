@@ -18,15 +18,9 @@ class ProcessFile implements ShouldQueue
 
     public File $file;
 
-    public ?string $delimeter;
-
-    public function __construct(File $file, string $delimeter = 'null')
+    public function __construct(File $file)
     {
         $this->file = $file;
-
-        $this->delimeter = $delimeter;
-
-
     }
 
     public function handle()
@@ -38,16 +32,8 @@ class ProcessFile implements ShouldQueue
             );
         }
 
-        $fileExtension = strtolower($this->file->extension());
-
-        if ($fileExtension === 'txt' && is_null($this->delimeter)) {
-            throw new \Exception("delimeter option is required when dealing with txt files");
-        }
-
-        $delimeter = $fileExtension === 'txt' ? $this->delimeter : ',';
-
         try {
-            $output = (new FileProcessor())->read($this->file->url, $delimeter);
+            $output = (new FileProcessor())->read($this->file->url);
 
             collect($output)
                 ->chunk(100)
