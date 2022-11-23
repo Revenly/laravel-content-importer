@@ -40,8 +40,6 @@ class ProcessFile implements ShouldQueue
                 ->each(fn($chunk) => $this->processCollectionOutput($chunk));
 
             $this->file->markAsProcessed();
-
-            Storage::disk('local')->delete($this->file->url);
         } catch (\Exception $exception) {
             info($exception->getMessage());
         }

@@ -2,6 +2,7 @@
 namespace R64\ContentImport\Commands;
 
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Storage;
 use R64\ContentImport\Jobs\ProcessFile;
 use R64\ContentImport\Models\File;
 
@@ -12,7 +13,7 @@ class ProcessImportedFilesCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'files:process';
+    protected $signature = 'files:process {--delete=1}';
 
     /**
      * The console command description.
@@ -38,8 +39,15 @@ class ProcessImportedFilesCommand extends Command
      */
     public function handle()
     {
+        $delete = (bool) $this->option('delete') ?? true;
+
         File::unprocessed()
             ->onlyExtensions(array_map('strtolower', config('content_import.extensions')))
-            ->each(fn($file) => ProcessFile::dispatch($file));
+            ->each(fn($file) => ProcessFile::dispatch($file))
+            ->each(function ($file) use ($delete) {
+                if ($delete) {
+                    Storage::disk('local')->delete($file->url);
+                }
+            });
     }
 }
