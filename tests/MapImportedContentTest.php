@@ -39,7 +39,7 @@ class MapImportedContentTest extends TestCase
                 "recordtype" => "Account",
                 "streetname" => "62 North Central Dr.",
                 "dateofbirth" => null,
-                "phonenumber" => 6363856698,
+                "phonenumber" => 6_363_856_698,
                 "producttype" => "00014 - BANK",
                 "emailaddress" => "drew.christmas@deltaoutsourcegroup.com",
                 "accountstatus" => "ACT",
