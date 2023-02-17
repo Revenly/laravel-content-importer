@@ -9,7 +9,7 @@ class TrimString implements HandlerContract
 {
     public function handle($content, Closure $next)
     {
-        $content = trim($content);
+        $content = trim((string) $content);
 
         return $next($content);
     }

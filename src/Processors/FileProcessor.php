@@ -19,19 +19,12 @@ class FileProcessor implements FileProcessorContract
         $processor->setHeaderOffset(0);
         $processor->setDelimiter($delimiter);
 
-        $headers = array_map(function ($header) {
-            return strtolower(str_replace(' ', '', $header));
-        }, $processor->getHeader());
+        $headers = array_map(fn($header) => strtolower(str_replace(' ', '', (string) $header)), $processor->getHeader());
 
         return $processor->getRecords($headers);
     }
 
-    /**
-     * @param string $path
-     *
-     * @return false|int|string
-     */
-    protected function findDelimiter(string $path)
+    protected function findDelimiter(string $path): false|int|string
     {
         $stream = fopen(Storage::disk('local')->path($path), 'r');
 

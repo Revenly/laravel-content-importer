@@ -34,9 +34,7 @@ class ContentImportServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(MapImportedContent::class, function() {
-            return new MapImportedContent;
-        });
+        $this->app->singleton(MapImportedContent::class, fn() => new MapImportedContent);
 
         $this->mergeConfigFrom(__DIR__.'/../config/config.php', 'content-import');
     }

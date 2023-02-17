@@ -192,11 +192,6 @@ class MapImportedContent
         return $this;
     }
 
-    /**
-     * @param bool $firstRun
-     *
-     * @return MapImportedContent
-     */
     public function isFirstRun(bool $firstRun): MapImportedContent
     {
         $this->firstRun = $firstRun;
@@ -206,18 +201,14 @@ class MapImportedContent
 
     public function map(): self
     {
-        $this->mappedRows = $this->content->reject(function ($row) {
-            return $this->shouldSkipBeforeTransformation && call_user_func($this->shouldSkipBeforeTransformation, $row);
-        })
+        $this->mappedRows = $this->content->reject(fn($row) => $this->shouldSkipBeforeTransformation && call_user_func($this->shouldSkipBeforeTransformation, $row))
             ->map(function ($row) {
                 $row = array_merge($row, $this->additionalRows);
                 return [
                     'row' => $row,
                     'data' => $this->mapRow($row),
                 ];
-            })->reject(function ($data) {
-                return $this->shouldSkipRow && call_user_func($this->shouldSkipRow, $data['row']);
-            })->toArray();
+            })->reject(fn($data) => $this->shouldSkipRow && call_user_func($this->shouldSkipRow, $data['row']))->toArray();
 
         return $this;
     }
@@ -252,9 +243,7 @@ class MapImportedContent
 
     protected function mapRow(array $row): array
     {
-        return $this->rowsToMap->map(function ($rowToMap, $model) use ($row) {
-            return $this->mapModelAttributes($rowToMap, $row, $model);
-        })->toArray();
+        return $this->rowsToMap->map(fn($rowToMap, $model) => $this->mapModelAttributes($rowToMap, $row, $model))->toArray();
     }
 
     protected function savingModel(Model $model, array $items): Model
@@ -329,9 +318,7 @@ class MapImportedContent
             return $value;
         }
 
-        $castings = $this->casts->filter(function ($value, $key) use ($model) {
-            return $key === $model;
-        });
+        $castings = $this->casts->filter(fn($value, $key) => $key === $model);
 
         if (!$castings) {
             return $value;
@@ -366,9 +353,7 @@ class MapImportedContent
             return true;
         }
 
-        $validation = $this->validators->filter(function ($value, $key) use ($model) {
-            return $key === $model;
-        });
+        $validation = $this->validators->filter(fn($value, $key) => $key === $model);
 
         if (!$validation) {
             return true;
@@ -407,7 +392,7 @@ class MapImportedContent
 
     protected function setModel(Model $model): void
     {
-        $this->models[get_class($model)] = $model;
+        $this->models[$model::class] = $model;
     }
 
     public function getMappedRows(): array

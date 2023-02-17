@@ -9,7 +9,7 @@ class LowerCaseString implements HandlerContract
 {
     public function handle($content, Closure $next)
     {
-        $content = strtolower($content);
+        $content = strtolower((string) $content);
 
         return $next($content);
     }

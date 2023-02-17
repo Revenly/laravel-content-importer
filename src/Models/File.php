@@ -49,6 +49,6 @@ class File extends Model
 
     public function extension(): string
     {
-        return collect(explode('.', $this->url))->last();
+        return collect(explode('.', (string) $this->url))->last();
     }
 }
