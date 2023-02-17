@@ -16,17 +16,8 @@ class ProcessFile implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    private File $file;
-    private bool $deleteFile;
-
-    /**
-     * @param File $file
-     * @param bool $deleteFile
-     */
-    public function __construct(File $file, bool $deleteFile)
+    public function __construct(private readonly File $file, private readonly bool $deleteFile)
     {
-        $this->file       = $file;
-        $this->deleteFile = $deleteFile;
     }
 
     public function handle()

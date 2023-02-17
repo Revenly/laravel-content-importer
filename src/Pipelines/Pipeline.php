@@ -20,8 +20,6 @@ class Pipeline implements PipelineContract
         return app(LaravelPipeline::class)
             ->send($content)
             ->through($concerns)
-            ->then(function ($content) {
-                return $content;
-            });
+            ->then(fn($content) => $content);
     }
 }

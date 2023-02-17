@@ -7,15 +7,12 @@ class ValidationFailed
 {
     use Dispatchable;
 
-    public $row;
-
     /**
      * Create a new event instance.
      *
      * @param $row
      */
-    public function __construct($row)
+    public function __construct(public $row)
     {
-        $this->row = $row;
     }
 }

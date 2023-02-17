@@ -106,11 +106,6 @@ class SaveImportedContent implements ImportableModel
         return $this;
     }
 
-    /**
-     * @param bool $firstRun
-     *
-     * @return SaveImportedContent
-     */
     public function isFirstRun(bool $firstRun): SaveImportedContent
     {
         $this->firstRun = $firstRun;
@@ -133,13 +128,9 @@ class SaveImportedContent implements ImportableModel
 
         $this->models = $models;
 
-        $modelItems = collect($items)->filter(function ($value, $key) {
-            return !$this->isRelationAttribute($key);
-        })->toArray();
+        $modelItems = collect($items)->filter(fn($value, $key) => !$this->isRelationAttribute($key))->toArray();
 
-        $relationships = collect($items)->filter(function ($value, $key) {
-            return $this->isRelationAttribute($key);
-        });
+        $relationships = collect($items)->filter(fn($value, $key) => $this->isRelationAttribute($key));
 
         $modelItems = $this->handleDependencies($modelItems);
 
@@ -167,7 +158,7 @@ class SaveImportedContent implements ImportableModel
 
                     foreach ($items as $item) {
                         if (is_array($item)) {
-                            $relationShipModel = get_class($relatedModel);
+                            $relationShipModel = $relatedModel::class;
 
                             $modelIds[] = $this->saveModel(new $relationShipModel, $item)->getKey();
                         }
@@ -238,7 +229,7 @@ class SaveImportedContent implements ImportableModel
 
                 $this->saveModel($relatedModel, $items);
             });
-        } catch (\Exception $exception) {}
+        } catch (\Exception) {}
     }
 
     protected function saveModel(Model $model, array $items): Model
@@ -330,9 +321,7 @@ class SaveImportedContent implements ImportableModel
 
         $callback = $this->beforeUpdate;
 
-        return collect($items)->filter(function ($value, $attribute) use ($existedModel, $callback) {
-            return !$callback($existedModel, $attribute);
-        })->toArray();
+        return collect($items)->filter(fn($value, $attribute) => !$callback($existedModel, $attribute))->toArray();
     }
 
     protected function getCustomAttributesToUpdate(Model $model, array $items): array
@@ -355,14 +344,12 @@ class SaveImportedContent implements ImportableModel
             })->toArray();
         }
 
-        return collect($items)->filter(function ($value, $attribute) use ($customAttributesToUpdate) {
-            return in_array($attribute, $customAttributesToUpdate);
-        })->toArray();
+        return collect($items)->filter(fn($value, $attribute) => in_array($attribute, $customAttributesToUpdate))->toArray();
     }
 
     protected function getModelIfExists(Model $model, array $items): ?Model
     {
-        $uniqueFields = array_key_exists(get_class($model), $this->uniqueFields) ? $this->uniqueFields[get_class($model)] : [];
+        $uniqueFields = array_key_exists($model::class, $this->uniqueFields) ? $this->uniqueFields[$model::class] : [];
 
         if (!$uniqueFields) {
             return null;
@@ -403,9 +390,7 @@ class SaveImportedContent implements ImportableModel
             return $items;
         }
 
-        $dependencies = collect(Arr::get($this->dependencies, get_class($this->model), []))->map(function ($depend) {
-            return $this->models[$depend]->id;
-        });
+        $dependencies = collect(Arr::get($this->dependencies, $this->model::class, []))->map(fn($depend) => $this->models[$depend]->id);
 
         if ($dependencies->isNotEmpty()) {
             $items = $dependencies->merge($items)->toArray();
@@ -421,7 +406,6 @@ class SaveImportedContent implements ImportableModel
 
     /**
      * @param       $model
-     * @param array $items
      *
      * @return mixed
      */
@@ -448,7 +432,6 @@ class SaveImportedContent implements ImportableModel
     {
         $inverseMorphMap = array_flip(Relation::morphMap());
 
-        return $inverseMorphMap[get_class($this->model)] ?? get_class($this->model);
-
+        return $inverseMorphMap[$this->model::class] ?? $this->model::class;
     }
 }

@@ -8,7 +8,7 @@ class RemoveInvalidCharacters implements HandlerContract
 {
     public function handle($content, Closure $next)
     {
-        $content = preg_replace('/[^A-Za-z0-9-_@.]/', '', $content);
+        $content = preg_replace('/[^A-Za-z0-9-_@.]/', '', (string) $content);
 
         return $next($content);
     }

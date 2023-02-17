@@ -54,9 +54,6 @@ class ImportFilesCommand extends Command
         $this->processFiles($deleteFile);
     }
 
-    /**
-     * @param string $url
-     */
     private function saveImportedFile(string $url)
     {
         $model = config('content_import.model') ?? File::class;
@@ -68,32 +65,21 @@ class ImportFilesCommand extends Command
         }
     }
 
-    /**
-     * @param \Illuminate\Contracts\Filesystem\Filesystem $fileSystem
-     * @param                                             $folder
-     *
-     * @return void
-     */
     protected function createFilesFromDisk(\Illuminate\Contracts\Filesystem\Filesystem $fileSystem, $folder): void
     {
         collect($fileSystem->directories($folder ?? config('content_import.directory')))
             ->lazy()
             ->each(fn($path) => collect($fileSystem->allFiles($path))
                 ->reject(function ($file) {
-                    $extension = strtolower(Arr::last(explode('.', $file)));
+                    $extension = strtolower((string) Arr::last(explode('.', $file)));
 
-                    $availableExtensions = str_replace('.', '', config('content_import.extensions'));
+                    $availableExtensions = str_replace('.', '', (string) config('content_import.extensions'));
                     $availableExtensions = array_map(fn($extension) => strtolower($extension), $availableExtensions);
 
                     return !in_array($extension, $availableExtensions);
                 })->each(fn($file) => $this->saveImportedFile($file)));
     }
 
-    /**
-     * @param bool $deleteFile
-     *
-     * @return void
-     */
     protected function processFiles(bool $deleteFile): void
     {
         File::unprocessed()
