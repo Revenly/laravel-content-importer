@@ -263,15 +263,15 @@ class MapImportedContent
             ->run($items, $this->uniqueFields, $this->models, $this->dependencies);
     }
 
-    protected function mapModelAttributes(array $rowToMap, array $row, string $model): array
+    protected function mapModelAttributes(array $rowToMap, array $row, string $model, string $relation = null): array
     {
         $rowToMap = collect($rowToMap);
 
-        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap) {
+        return collect($rowToMap)->map(function ($column, $attribute) use ($row, $model, $rowToMap, $relation) {
             if ($this->isRelationAttribute($attribute)) {
 
                 if (is_array($column) && !is_string(Arr::first($column))) {
-                    return collect($column)->map(fn($cols) => $this->mapModelAttributes($cols, $row, $model));
+                    return collect($column)->map(fn($cols) => $this->mapModelAttributes($cols, $row, $model, $attribute));
                 }
 
                 return $this->mapModelAttributes($column, $row, $model);
@@ -281,12 +281,12 @@ class MapImportedContent
                 return $column;
             }
 
-            return $this->retrieveColumnFromRow($column, $attribute, $model, $row, $rowToMap);
+            return $this->retrieveColumnFromRow($column, $attribute, $model, $row, $rowToMap, $relation);
         })->toArray();
 
     }
 
-    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row, Collection $toMap)
+    protected function retrieveColumnFromRow(string $column, string $attribute, string $model, array $row, Collection $toMap, string $relation = null)
     {
         try {
             $this->validateAttribute(...func_get_args());
@@ -310,7 +310,7 @@ class MapImportedContent
         return collect($items)->forget($notNeeded)->toArray();
     }
 
-    protected function castAttribute(string $column, string $attribute, string $model, array $row): ?string
+    protected function castAttribute(string $column, string $attribute, string $model, array $row, Collection $toMap, string $relation = null): ?string
     {
         $value = array_key_exists($column, $row) ? $row[$column] : null;
 
@@ -326,6 +326,10 @@ class MapImportedContent
 
         $modelCastings = (array) Arr::get($castings, $model, []);
 
+        if (! is_null($relation) && isset($modelCastings[$relation])) {
+            $modelCastings = $modelCastings[$relation];
+        }
+        
         if (array_key_exists($attribute, $modelCastings)) {
             $callback = $modelCastings[$attribute];
 
